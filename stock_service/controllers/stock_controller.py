@@ -2,26 +2,26 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from decimal import Decimal
 from datetime import date
-from typing import List
-
-from ..db_context import get_db
-from ..services.stock_service import StockService
-from ..models import Stock, StockPrice, Portfolio, PortfolioHolding
+from typing import List, Optional
+from utils.db_context import get_db
+from services.stock_service import StockService
+from models.models import Stock, StockPrice, Portfolio, PortfolioHolding
+from models.pydantic_models import *
 
 router = APIRouter(
     prefix="/api/stocks",
     tags=["stocks"]
 )
 
-@router.post("/", response_model=Stock)
-def create_stock(symbol: str, name: str, sector: str, market_cap: float, db: Session = Depends(get_db)):
+@router.post("/", response_model=StockResponse)
+def create_stock(stock: StockCreate, db: Session = Depends(get_db)):
     service = StockService(db)
-    existing_stock = service.get_stock(symbol)
+    existing_stock = service.get_stock(stock.symbol)
     if existing_stock:
         raise HTTPException(status_code=400, detail="Stock already exists")
-    return service.create_stock(symbol, name, sector, Decimal(str(market_cap)))
+    return service.create_stock(stock.symbol, stock.name, stock.sector, Decimal(str(stock.market_cap)))
 
-@router.get("/{symbol}", response_model=Stock)
+@router.get("/{symbol}", response_model=StockResponse)
 def get_stock(symbol: str, db: Session = Depends(get_db)):
     service = StockService(db)
     stock = service.get_stock(symbol)
@@ -29,20 +29,15 @@ def get_stock(symbol: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Stock not found")
     return stock
 
-@router.get("/", response_model=List[Stock])
+@router.get("/", response_model=List[StockResponse])
 def get_all_stocks(db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_all_stocks()
 
-@router.post("/{symbol}/prices")
+@router.post("/{symbol}/prices", response_model=StockPriceResponse)
 def add_stock_price(
     symbol: str,
-    price_date: date,
-    open_price: float,
-    close_price: float,
-    high_price: float,
-    low_price: float,
-    volume: int,
+    price: StockPriceCreate,
     db: Session = Depends(get_db)
 ):
     service = StockService(db)
@@ -51,20 +46,20 @@ def add_stock_price(
         raise HTTPException(status_code=404, detail="Stock not found")
     return service.add_stock_price(
         symbol,
-        price_date,
-        Decimal(str(open_price)),
-        Decimal(str(close_price)),
-        Decimal(str(high_price)),
-        Decimal(str(low_price)),
-        volume
+        price.price_date,
+        Decimal(str(price.open_price)),
+        Decimal(str(price.close_price)),
+        Decimal(str(price.high_price)),
+        Decimal(str(price.low_price)),
+        price.volume
     )
 
-@router.post("/portfolios", response_model=Portfolio)
-def create_portfolio(user_id: int, name: str, db: Session = Depends(get_db)):
+@router.post("/portfolios", response_model=PortfolioResponse)
+def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
     service = StockService(db)
-    return service.create_portfolio(user_id, name)
+    return service.create_portfolio(portfolio.user_id, portfolio.name)
 
-@router.get("/portfolios/{portfolio_id}", response_model=Portfolio)
+@router.get("/portfolios/{portfolio_id}", response_model=PortfolioResponse)
 def get_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
     service = StockService(db)
     portfolio = service.get_portfolio(portfolio_id)
@@ -72,40 +67,37 @@ def get_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return portfolio
 
-@router.get("/portfolios/user/{user_id}", response_model=List[Portfolio])
+@router.get("/portfolios/user/{user_id}", response_model=List[PortfolioResponse])
 def get_user_portfolios(user_id: int, db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_user_portfolios(user_id)
 
-@router.post("/portfolios/{portfolio_id}/holdings")
+@router.post("/portfolios/{portfolio_id}/holdings", response_model=HoldingResponse)
 def add_holding(
     portfolio_id: int,
-    symbol: str,
-    quantity: int,
-    price: float,
+    holding: HoldingCreate,
     db: Session = Depends(get_db)
 ):
     service = StockService(db)
     portfolio = service.get_portfolio(portfolio_id)
     if not portfolio:
         raise HTTPException(status_code=404, detail="Portfolio not found")
-    stock = service.get_stock(symbol)
+    stock = service.get_stock(holding.symbol)
     if not stock:
         raise HTTPException(status_code=404, detail="Stock not found")
-    return service.add_holding(portfolio_id, symbol, quantity, Decimal(str(price)))
+    return service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
 
-@router.put("/portfolios/holdings/{holding_id}")
+@router.put("/portfolios/holdings/{holding_id}", response_model=HoldingResponse)
 def update_holding(
     holding_id: int,
-    quantity: int,
-    price: float,
+    holding: HoldingUpdate,
     db: Session = Depends(get_db)
 ):
     service = StockService(db)
-    holding = service.update_holding(holding_id, quantity, Decimal(str(price)))
-    if not holding:
+    holding_obj = service.update_holding(holding_id, holding.quantity, Decimal(str(holding.price)))
+    if not holding_obj:
         raise HTTPException(status_code=404, detail="Holding not found")
-    return holding
+    return holding_obj
 
 @router.delete("/portfolios/holdings/{holding_id}")
 def delete_holding(holding_id: int, db: Session = Depends(get_db)):

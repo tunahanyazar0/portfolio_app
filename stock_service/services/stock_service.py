@@ -4,17 +4,36 @@ from datetime import date
 from decimal import Decimal
 from typing import List, Optional
 
-from ..models import Stock, StockPrice, Portfolio, PortfolioHolding
+from models.models import Stock, Sector, Portfolio, PortfolioHolding, StockPrice
 
 class StockService:
     def __init__(self, db: Session):
         self.db = db
 
     def create_stock(self, symbol: str, name: str, sector: str, market_cap: Decimal) -> Stock:
+        # First get or create sector
+        sector_obj = self.db.query(Sector).filter(Sector.name == sector).first()
+        if not sector_obj:
+            sector_obj = Sector(name=sector)
+            self.db.add(sector_obj)
+            self.db.commit()
+            self.db.refresh(sector_obj)
+
+        # Check if stock with same symbol or name exists
+        stock_exists = self.db.query(Stock).filter(
+            (Stock.stock_symbol == symbol) | (Stock.name == name)
+        ).first()
+        if stock_exists:
+            if stock_exists.stock_symbol == symbol:
+                raise ValueError(f"Stock with symbol {symbol} already exists")
+            else:
+                raise ValueError(f"Stock with name {name} already exists")
+
+        # create the stock object 
         stock = Stock(
             stock_symbol=symbol,
             name=name,
-            sector=sector,
+            sector_id=sector_obj.sector_id,
             market_cap=market_cap
         )
         self.db.add(stock)
@@ -34,11 +53,7 @@ class StockService:
         stock_price = StockPrice(
             stock_symbol=symbol,
             date=date,
-            open_price=open_price,
-            close_price=close_price,
-            high_price=high_price,
-            low_price=low_price,
-            volume=volume
+            close_price=close_price  # Note: StockPrice model only has close_price now
         )
         self.db.add(stock_price)
         self.db.commit()

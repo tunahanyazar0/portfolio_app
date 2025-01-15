@@ -6,9 +6,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Local application imports
-from stock_service.controllers.stock_controller import router as stock_router
-from stock_service.models import Base
-from stock_service.db_context import engine
+from controllers.stock_controller import router as stock_router
+from models.models import Base
+from utils.db_context import engine
 
 # Single dot (.) means current directory, double dot (..) means parent directory
 
@@ -26,8 +26,7 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
-    allow_credentials=True,
+    allow_origins=["*"], 
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -45,5 +44,4 @@ async def root():
     }
 
 if __name__ == "__main__":
-    import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
