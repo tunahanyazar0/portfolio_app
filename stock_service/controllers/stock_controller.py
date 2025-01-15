@@ -8,6 +8,7 @@ from services.stock_service import StockService
 from models.models import Stock, StockPrice, Portfolio, PortfolioHolding
 from models.pydantic_models import *
 
+
 router = APIRouter(
     prefix="/api/stocks",
     tags=["stocks"]
