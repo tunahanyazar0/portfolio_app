@@ -42,14 +42,14 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
     Authenticate a user and generate an access token.
 
     Args:
-        user_credentials (UserLogin): The user credentials containing username and password
+        user_credentials (UserLogin): The login credentials containing username and password
         db (Session): Database session dependency
 
     Returns:
-        Token: Object containing the access token and token type
+        Token: Object containing the JWT access token and token type
         
     Raises:
-        HTTPException: 401 error if authentication fails
+        HTTPException: 401 error if credentials are invalid
     """
     auth_service = AuthenticationService(db)
     user = auth_service.authenticate_user(
@@ -66,7 +66,9 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
 
     # if user exists, return the token created with username. Username is accessible in the frontend like response.data.sub 
     access_token = auth_service.create_access_token(
-        data={"sub": user.username}
+        data={"sub": user.username,
+              "role": user.role
+            }
     )
     
     return {"access_token": access_token, "token_type": "bearer"}

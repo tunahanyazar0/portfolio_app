@@ -49,6 +49,7 @@ class AuthenticationService:
         return db_user
     
     # this returns the user if exist or return null
+    # in the controller, if the user is returned then the controller will return the token of the user -> to be done after login
     def authenticate_user(self, username: str, password: str) -> Optional[User]:
         user = self.db.query(User).filter(User.username == username).first()
         if not user:
