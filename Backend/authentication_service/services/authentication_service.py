@@ -25,7 +25,7 @@ class AuthenticationService:
     def get_password_hash(self, password: str) -> str:
         return pwd_context.hash(password)
 
-    def create_user(self, username: str, email: str, password: str) -> User:
+    def create_user(self, username: str, email: str, password: str, first_name: str, last_name: str, role: str = 'user') -> User:
         # first check there is a user with same email or username
         existing_user = self.db.query(User).filter(
             (User.username == username) | (User.email == email)
@@ -41,7 +41,10 @@ class AuthenticationService:
         db_user = User(
             username=username,
             email=email,
-            password=hashed_password
+            password=hashed_password,
+            first_name=first_name,
+            last_name=last_name,
+            role=role
         )
         self.db.add(db_user)
         self.db.commit()

@@ -6,18 +6,18 @@ from models.pydantic_models import UserCreate, UserResponse, UserLogin, Token
 from pydantic import EmailStr
 
 router = APIRouter()
-
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     """
     Register a new user in the system.
 
     Args:
-        user (UserCreate): The user registration data containing username, email and password
+        user (UserCreate): The user registration data containing username, email, password, 
+                          first_name, last_name, and optional role
         db (Session): Database session dependency
 
     Returns:
-        UserResponse: Object containing the created user's id, username and email
+        UserResponse: Object containing the created user's details
         
     Raises:
         HTTPException: 400 error if username or email already exists
@@ -27,7 +27,10 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         db_user = auth_service.create_user(
             username=user.username,
             email=user.email,
-            password=user.password
+            password=user.password,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            role=user.role
         )
         return db_user
     except ValueError as e:
