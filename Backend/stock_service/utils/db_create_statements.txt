@@ -71,7 +71,6 @@ CREATE TABLE dividends (
     INDEX idx_dividends_stock_payment (stock_symbol, payment_date)
 );
 
--- Stock Prices table
 CREATE TABLE stock_prices (
     price_id INT AUTO_INCREMENT PRIMARY KEY,
     stock_symbol VARCHAR(10) NOT NULL,
@@ -79,8 +78,10 @@ CREATE TABLE stock_prices (
     close_price DECIMAL(10, 2),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_symbol) REFERENCES stocks(stock_symbol),
+    UNIQUE (stock_symbol, date),  -- Add this line to enforce uniqueness -> aynı gün için 2 data girilmesin
     INDEX idx_stock_prices_stock_date (stock_symbol, date)
 );
+
 
 -- Portfolios table
 CREATE TABLE portfolios (

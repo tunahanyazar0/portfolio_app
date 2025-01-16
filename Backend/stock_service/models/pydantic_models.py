@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime, date
 from typing import List, Optional
+from decimal import Decimal
 
 class StockCreate(BaseModel):
     symbol: str
@@ -18,23 +19,22 @@ class StockResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class StockPriceCreate(BaseModel):
-    price_date: date
-    open_price: float
-    close_price: float
-    high_price: float
-    low_price: float
-    volume: int
+# bu stock price oluştururken
+class StockPriceInput(BaseModel):
+    stock_symbol: str
+    start_date: date
+    end_date: date
+
+
+# bu ikisi stock price input ve output için
+class StockPriceRequest(BaseModel):
+    stock_symbol: str
+    date: str
 
 class StockPriceResponse(BaseModel):
-    price_id: int
     stock_symbol: str
-    date: date
-    close_price: float
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
+    date: str
+    close_price: Optional[Decimal]
 
 class PortfolioCreate(BaseModel):
     user_id: int
@@ -68,3 +68,4 @@ class HoldingResponse(BaseModel):
 class HoldingUpdate(BaseModel):
     quantity: int
     price: float
+

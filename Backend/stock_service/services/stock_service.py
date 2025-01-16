@@ -3,6 +3,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import date
 from decimal import Decimal
 from typing import List, Optional
+import yfinance as yf  # New import
+from datetime import datetime  # New import
+import pandas as pd
 
 from models.models import Stock, Sector, Portfolio, PortfolioHolding, StockPrice
 
@@ -47,18 +50,84 @@ class StockService:
     def get_all_stocks(self) -> List[Stock]:
         return self.db.query(Stock).all()
 
-    def add_stock_price(self, symbol: str, date: date, open_price: Decimal, 
-                       close_price: Decimal, high_price: Decimal, low_price: Decimal, 
-                       volume: int) -> StockPrice:
-        stock_price = StockPrice(
-            stock_symbol=symbol,
-            date=date,
-            close_price=close_price  # Note: StockPrice model only has close_price now
-        )
-        self.db.add(stock_price)
-        self.db.commit()
-        self.db.refresh(stock_price)
-        return stock_price
+    
+    def add_stock_price(self, stock_symbol: str, start_date: str, end_date: str):
+        try:    
+            # first check stock is in stocks db
+            stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+            if stock is None:
+                raise ValueError(f"Stock with symbol {stock_symbol} does not exists")
+
+            # date, symbol comb uniqueness satisfied thorugh db definition
+            # then, start adding data
+            stock_symbol = stock_symbol.upper()
+
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+            # Fetch stock data using yfinance 
+            stock_data = yf.download(stock_symbol, start=start_date, end=end_date)
+
+            # Check if data is available
+            if stock_data.empty:
+                print(f"No data available for {stock_symbol} from {start_date} to {end_date}")
+                return
+            
+            prices = []
+            dates = []
+
+            # Iterate through the data and add closing prices
+            for date, row in stock_data.iterrows():
+                # check whether the las
+
+                # Extract the Close price explicitly using multi-index handling
+                if 'Close' in row.index:
+                    close_price_series = row['Close']
+                    # Ensure close_price is the specific value for the stock
+                    if isinstance(close_price_series, pd.Series):
+                        close_price = close_price_series.get(stock_symbol, None)
+                    else:
+                        close_price = close_price_series
+                else:
+                    close_price = None
+
+                #print(date)
+                #print(close_price)
+                prices.append(close_price)
+                dates.append(date)
+
+            stock_symbol = stock_symbol[:-3]
+            for price, date in zip(prices, dates):
+                # there is no null data in prices
+
+                # Convert to Decimal for compatibility with DECIMAL(10, 2)
+                close_price = Decimal(f"{price:.2f}")
+
+                # Add the stock price record to the database
+                stock_price = StockPrice(
+                    stock_symbol=stock_symbol,
+                    date=date.date(),  # Convert timestamp to date
+                    close_price=close_price,  # Store as Decimal
+                )
+                self.db.add(stock_price)
+            
+            # Commit all new records to the database
+            self.db.commit()  # Moved this line to commit after adding all prices
+            print(f"Closing prices for {stock_symbol} added successfully.")
+
+        except Exception as e:
+            self.db.rollback()  # Rollback in case of an error
+            print(f"An error occurred while adding stock prices: {e}")
+    
+    def get_stock_price_on_date(self, stock_symbol: str, date: str) -> Optional[Decimal]:
+        """Retrieve the stock price for a given stock symbol on a specific date."""
+        stock_price = self.db.query(StockPrice).filter(
+            StockPrice.stock_symbol == stock_symbol,
+            StockPrice.date == date
+        ).first()
+        
+        if stock_price:
+            return stock_price.close_price
+        return None
 
     def create_portfolio(self, user_id: int, name: str) -> Portfolio:
         portfolio = Portfolio(

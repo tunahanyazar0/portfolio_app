@@ -36,27 +36,28 @@ def get_all_stocks(db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_all_stocks()
 
-# only admin or moderator can add stock price
-@router.post("/{symbol}/prices", response_model=StockPriceResponse)
-def add_stock_price(
-    symbol: str,
-    price: StockPriceCreate,
-    db: Session = Depends(get_db),
-    username: str = Depends(verify_role)
-):
-    service = StockService(db)
-    stock = service.get_stock(symbol)
-    if not stock:
-        raise HTTPException(status_code=404, detail="Stock not found")
-    return service.add_stock_price(
-        symbol,
-        price.price_date,
-        Decimal(str(price.open_price)),
-        Decimal(str(price.close_price)),
-        Decimal(str(price.high_price)),
-        Decimal(str(price.low_price)),
-        price.volume
+@router.post("/{symbol}/add-price")
+async def add_stock_prices(stock_price_input: StockPriceInput, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    stock_service.add_stock_price(stock_price_input.stock_symbol, stock_price_input.start_date.isoformat(), stock_price_input.end_date.isoformat())
+    return {"message": f"Stock prices for {stock_price_input.stock_symbol} added from {stock_price_input.start_date} to {stock_price_input.end_date}."}
+
+
+# controller to get stock price on a given date
+@router.post("/price", response_model=StockPriceResponse)
+def get_stock_price(request: StockPriceRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    price = stock_service.get_stock_price_on_date(request.stock_symbol, request.date)
+    
+    if price is None:
+        raise HTTPException(status_code=404, detail="Stock price not found")
+    
+    return StockPriceResponse(
+        stock_symbol=request.stock_symbol,
+        date=request.date,
+        close_price=price
     )
+
 
 @router.post("/portfolios", response_model=PortfolioResponse)
 def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):

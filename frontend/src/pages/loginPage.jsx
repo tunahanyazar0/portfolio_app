@@ -33,13 +33,14 @@ const LoginPage = () => {
         setLoading(true);
         
         try {
-            // Call authService to authenticate
+            // Call authService to authenticate, response is the user data
             const response = await authService.login(
                 formData.username, 
                 formData.password
             );
             
             // Update global auth state using AuthContext
+            // bu user datayı (yukarıdaki response), auth context teki userData ya assign eden
             login(response);
             
             // Navigate to dashboard on success

@@ -7,12 +7,24 @@ const AuthContext = createContext(null);
 /*
 Context in react:
 
-Three main element of auth context:
-user:
-login:
-logout: 
+1. **user**: This usually holds the information about the currently authenticated user. 
+It can include details like the user's ID, name, email, and any other relevant 
+data that you might need throughout your application.
 
-isLoading: 
+2. **login**: This is a function that is responsible for authenticating a user. 
+It typically takes user credentials (like username and password), 
+sends them to an authentication service (like an API), and if successful, 
+updates the `user` state with the authenticated user's information.
+
+3. **logout**: This function is used to log the user out of the application. 
+It usually clears the user state and may also involve removing any 
+authentication tokens stored in local storage or cookies.
+
+4. **isLoading**: This boolean value indicates whether the authentication process
+ is currently in progress. It can be useful for showing loading indicators
+  in the UI while the login or logout process is happening.
+
+
 
 These three:
 - Maintain the user's authentication state
