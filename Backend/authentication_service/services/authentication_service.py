@@ -59,6 +59,7 @@ class AuthenticationService:
             return None
         if not self.verify_password(password, user.password):
             return None
+        print("in service: ", user)
         return user
 
     # token oluşturuyor user için bunu frontend de keep edicek ve işlemleri sırasında backend e yollucakki onu authenticate etsin 
