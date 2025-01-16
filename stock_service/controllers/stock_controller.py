@@ -7,14 +7,16 @@ from utils.db_context import get_db
 from services.stock_service import StockService
 from models.models import Stock, StockPrice, Portfolio, PortfolioHolding
 from models.pydantic_models import *
+from utils.authentication_utils import verify_role # this function checks the token and returns the username if the token is legit
 
 router = APIRouter(
     prefix="/api/stocks",
     tags=["stocks"]
 )
 
+# only admin or moderator can add stock to the system
 @router.post("/", response_model=StockResponse)
-def create_stock(stock: StockCreate, db: Session = Depends(get_db)):
+async def create_stock(stock: StockCreate, db: Session = Depends(get_db), username: str = Depends(verify_role)):
     service = StockService(db)
     existing_stock = service.get_stock(stock.symbol)
     if existing_stock:
@@ -34,11 +36,13 @@ def get_all_stocks(db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_all_stocks()
 
+# only admin or moderator can add stock price
 @router.post("/{symbol}/prices", response_model=StockPriceResponse)
 def add_stock_price(
     symbol: str,
     price: StockPriceCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    username: str = Depends(verify_role)
 ):
     service = StockService(db)
     stock = service.get_stock(symbol)
