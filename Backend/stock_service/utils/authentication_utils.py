@@ -41,7 +41,7 @@ async def verify_role(credentials: HTTPAuthorizationCredentials = Security(secur
                 detail="User does not have required permissions",
             )
             
-        return username
+        return username # return the user name to the controller if the role is okey for the service
         
     except JWTError:
         raise HTTPException(
