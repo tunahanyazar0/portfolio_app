@@ -19,7 +19,7 @@ class StockResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# bu stock price oluştururken
+# bu stock price oluştururken ve ayrıca stock price isterken bir date range de 
 class StockPriceInput(BaseModel):
     stock_symbol: str
     start_date: date
@@ -30,6 +30,11 @@ class StockPriceInput(BaseModel):
 class StockPriceRequest(BaseModel):
     stock_symbol: str
     date: str
+
+class StockPriceInRangeRequest(BaseModel):
+    stock_symbol: str
+    start_date: str
+    end_date: str
 
 class StockPriceResponse(BaseModel):
     stock_symbol: str
@@ -69,3 +74,69 @@ class HoldingUpdate(BaseModel):
     quantity: int
     price: float
 
+
+# income statement request
+class IncomeStatementRequest(BaseModel):
+    stock_symbol: str
+
+
+# Income Statement Response
+class IncomeStatementResponse(BaseModel):
+    stock_symbol: str
+    quarter: str
+    revenue: Optional[Decimal]
+    gross_profit: Optional[Decimal]  # Added gross profit
+    operating_income: Optional[Decimal]  # Added operating income
+    net_profit: Optional[Decimal]
+    eps: Optional[float]
+    operating_margin: Optional[float]  # Added operating margin (%)
+
+    class Config:
+        from_attributes = True
+
+# Cash Flow Request
+class CashFlowRequest(BaseModel):
+    stock_symbol: str
+
+# Cash Flow Response
+class CashFlowResponse(BaseModel):
+    stock_symbol: str
+    quarter: str
+    operating_cash_flow: Optional[Decimal]
+    investing_cash_flow: Optional[Decimal]  # Added investing cash flow
+    financing_cash_flow: Optional[Decimal]  # Added financing cash flow
+    free_cash_flow: Optional[Decimal]  # Added free cash flow
+    capital_expenditures: Optional[Decimal]  # Added capital expenditures
+
+    class Config:
+        from_attributes = True
+
+# Dividend Request
+class DividendRequest(BaseModel):
+    stock_symbol: str
+
+# Dividend Response
+class DividendResponse(BaseModel):
+    stock_symbol: str
+    payment_date: str
+    amount: Optional[Decimal]
+
+    class Config:
+        from_attributes = True
+
+# Balance Sheet Request
+class BalanceSheetRequest(BaseModel):
+    stock_symbol: str
+
+# Balance Sheet Response
+class BalanceSheetResponse(BaseModel):
+    stock_symbol: str
+    quarter: str
+    total_assets: Optional[Decimal]
+    total_liabilities: Optional[Decimal]  # Added total liabilities
+    total_equity: Optional[Decimal]  # Added total equity
+    current_assets: Optional[Decimal]  # Added current assets
+    current_liabilities: Optional[Decimal]  # Added current liabilities
+
+    class Config:
+        from_attributes = True  # This will allow the response model to be created from the attributes of the class

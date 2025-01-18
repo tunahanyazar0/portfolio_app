@@ -36,6 +36,9 @@ def get_all_stocks(db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_all_stocks()
 
+
+# ENDPOINT FOR STOCK PRICES SERVICES
+
 @router.post("/{symbol}/add-price")
 async def add_stock_prices(stock_price_input: StockPriceInput, db: Session = Depends(get_db)):
     stock_service = StockService(db)
@@ -43,14 +46,33 @@ async def add_stock_prices(stock_price_input: StockPriceInput, db: Session = Dep
     return {"message": f"Stock prices for {stock_price_input.stock_symbol} added from {stock_price_input.start_date} to {stock_price_input.end_date}."}
 
 
-# controller to get stock price on a given date
+
+"""
+example request: http://localhost:8001/api/stocks/price
+{
+    "stock_symbol": "AAPL",
+    "date": "2021-01-04"
+}
+
+example response:
+{   
+    "stock_symbol": "AAPL",
+    "date": "2021-01-04",
+    "close_price": 129.41
+}
+"""
 @router.post("/price", response_model=StockPriceResponse)
 def get_stock_price(request: StockPriceRequest, db: Session = Depends(get_db)):
     stock_service = StockService(db)
     price = stock_service.get_stock_price_on_date(request.stock_symbol, request.date)
     
+    # if price is none, do not raise error since it might be a weekend or a holiday
     if price is None:
-        raise HTTPException(status_code=404, detail="Stock price not found")
+        return StockPriceResponse(
+            stock_symbol=request.stock_symbol,
+            date=request.date,
+            close_price=None
+        )
     
     return StockPriceResponse(
         stock_symbol=request.stock_symbol,
@@ -58,6 +80,203 @@ def get_stock_price(request: StockPriceRequest, db: Session = Depends(get_db)):
         close_price=price
     )
 
+# endpoint to return the stock prices for a given stock symbol and date range
+@router.post("/prices", response_model=List[StockPriceResponse])
+def get_stock_prices(request: StockPriceInRangeRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    prices = stock_service.get_stock_prices(request.stock_symbol, request.start_date, request.end_date)
+    
+    # Convert date to string
+    response = [
+        StockPriceResponse(
+            stock_symbol=price.stock_symbol,
+            date=price.date.isoformat(),  # Convert date to string
+            close_price=price.close_price
+        )
+        for price in prices
+    ]
+    
+    return response
+
+
+# ENDPOINT FOR ADDING DATA TO DB
+@router.post("/add-income-statement")
+def add_income_statement_to_db(request: IncomeStatementRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    print("request.stock_symbol", request.stock_symbol)
+    stock_service.add_income_statement(request.stock_symbol)
+    
+    # return a success message
+    return {"message": "Income statement added successfully"}
+
+# ENDPOINT FOR ADDING BALANCE SHEET DATA TO DB
+@router.post("/add-balance-sheet")
+def add_balance_sheet_to_db(request: BalanceSheetRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    stock_service.add_balance_sheet(request.stock_symbol)
+    
+    # return a success message
+    return {"message": "Balance sheet added successfully"}
+
+# ENDPOINT FOR ADDING CASH FLOW DATA TO DB
+@router.post("/add-cash-flow")
+def add_cash_flow_to_db(request: CashFlowRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    stock_service.add_cash_flow(request.stock_symbol)
+    
+    # return a success message
+    return {"message": "Cash flow added successfully"}
+
+
+"""
+# Income Statement Response
+class IncomeStatementResponse(BaseModel):
+    stock_symbol: str
+    quarter: str
+    revenue: Optional[Decimal]
+    gross_profit: Optional[Decimal]  # Added gross profit
+    operating_income: Optional[Decimal]  # Added operating income
+    net_profit: Optional[Decimal]
+    eps: Optional[float]
+    operating_margin: Optional[float]  # Added operating margin (%)
+
+    class Config:
+        from_attributes = True
+
+# Cash Flow Request
+class CashFlowRequest(BaseModel):
+    stock_symbol: str
+
+# Cash Flow Response
+class CashFlowResponse(BaseModel):
+    stock_symbol: str
+    quarter: str
+    operating_cash_flow: Optional[Decimal]
+    investing_cash_flow: Optional[Decimal]  # Added investing cash flow
+    financing_cash_flow: Optional[Decimal]  # Added financing cash flow
+    free_cash_flow: Optional[Decimal]  # Added free cash flow
+    capital_expenditures: Optional[Decimal]  # Added capital expenditures
+
+    class Config:
+        from_attributes = True
+
+# Dividend Request
+class DividendRequest(BaseModel):
+    stock_symbol: str
+
+# Dividend Response
+class DividendResponse(BaseModel):
+    stock_symbol: str
+    payment_date: str
+    amount: Optional[Decimal]
+
+    class Config:
+        from_attributes = True
+
+# Balance Sheet Request
+class BalanceSheetRequest(BaseModel):
+    stock_symbol: str
+
+# Balance Sheet Response
+class BalanceSheetResponse(BaseModel):
+    stock_symbol: str
+    quarter: str
+    total_assets: Optional[Decimal]
+    total_liabilities: Optional[Decimal]  # Added total liabilities
+    total_equity: Optional[Decimal]  # Added total equity
+    current_assets: Optional[Decimal]  # Added current assets
+    current_liabilities: Optional[Decimal]  # Added current liabilities
+
+    class Config:
+        from_attributes = True
+"""
+
+
+# Endpoint to return all financial data for a given stock symbol
+@router.get("/financials/{symbol}", response_model=List[IncomeStatementResponse])
+def get_financial_data(symbol: str, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    financials = stock_service.get_financial_data(symbol)
+    if not financials:
+        raise HTTPException(status_code=404, detail="Financial data not found")
+    
+    # Convert quarter to string
+    response = [
+        IncomeStatementResponse(
+            id=financial.id,
+            stock_symbol=financial.stock_symbol,
+            quarter=financial.quarter.isoformat(),  # Convert date to string
+            revenue=financial.revenue,
+            gross_profit=financial.gross_profit,  # Added gross profit
+            operating_income=financial.operating_income,  # Added operating income
+            net_profit=financial.net_profit,
+            eps=financial.eps,
+            operating_margin=financial.operating_margin  # Added operating margin (%)
+        )
+        for financial in financials
+    ]
+    
+    return response
+
+# Endpoint to return all balance sheet data for a given stock symbol
+@router.get("/balance-sheet/{symbol}", response_model=List[BalanceSheetResponse])
+def get_balance_sheet_data(symbol: str, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    balance_sheets = stock_service.get_balance_sheet_data(symbol)
+    if not balance_sheets:
+        raise HTTPException(status_code=404, detail="Balance sheet data not found")
+    
+    # Convert quarter to string
+    response = [
+        BalanceSheetResponse(
+            id=balance_sheet.id,
+            stock_symbol=balance_sheet.stock_symbol,
+            quarter=balance_sheet.quarter.isoformat(),  # Convert date to string
+            total_assets=balance_sheet.total_assets,
+            total_liabilities=balance_sheet.total_liabilities,  # Added total liabilities
+            total_equity=balance_sheet.total_equity,  # Added total equity
+            current_assets=balance_sheet.current_assets,  # Added current assets
+            current_liabilities=balance_sheet.current_liabilities  # Added current liabilities
+        )
+        for balance_sheet in balance_sheets
+    ]
+    
+    return response
+
+# Endpoint to return all cash flow data for a given stock symbol
+@router.get("/cash-flow/{symbol}", response_model=List[CashFlowResponse])
+def get_cash_flow_data(symbol: str, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    cash_flows = stock_service.get_cash_flow_data(symbol)
+    if not cash_flows:
+        raise HTTPException(status_code=404, detail="Cash flow data not found")
+    
+    # Convert quarter to string
+    response = [
+        CashFlowResponse(
+            id=cash_flow.id,
+            stock_symbol=cash_flow.stock_symbol,
+            quarter=cash_flow.quarter.isoformat(),  # Convert date to string
+            operating_cash_flow=cash_flow.operating_cash_flow,
+            investing_cash_flow=cash_flow.investing_cash_flow,  # Added investing cash flow
+            financing_cash_flow=cash_flow.financing_cash_flow,  # Added financing cash flow
+            free_cash_flow=cash_flow.free_cash_flow,  # Added free cash flow
+            capital_expenditures=cash_flow.capital_expenditures  # Added capital expenditures
+        )
+        for cash_flow in cash_flows
+    ]
+    
+    return response
+
+
+# ENDPOINT FOR ADDING DIVIDEND DATA TO DB
+@router.post("/add-dividend")
+def add_dividend_to_db(request: DividendRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    stock_service.add_dividend(request.stock_symbol)
+    
+    # return a success message
+    return {"message": "Dividend added successfully"}
 
 @router.post("/portfolios", response_model=PortfolioResponse)
 def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
