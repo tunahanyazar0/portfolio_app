@@ -9,6 +9,7 @@ import LoginPage from './pages/loginPage';
 import RegisterPage from './pages/registerPage';
 import Dashboard from './pages/dashboard';
 import NotFound from './pages/NotFound'; // You should create this component
+import StockPage from './pages/StockPage'; 
 
 function AppContent() {
     return (
@@ -25,6 +26,16 @@ function AppContent() {
                         element={
                             <PrivateRoute>
                                 <Dashboard />
+                            </PrivateRoute>
+                        } 
+                    />
+
+                    {/* Protected Routes */}
+                    <Route 
+                        path="/stocks/:symbol" 
+                        element={
+                            <PrivateRoute>
+                                <StockPage />
                             </PrivateRoute>
                         } 
                     />

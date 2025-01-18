@@ -31,12 +31,16 @@ CREATE TABLE financials (
     stock_symbol VARCHAR(10) NOT NULL,
     quarter DATE NOT NULL,
     revenue DECIMAL(20, 2),
+    gross_profit DECIMAL(20, 2), -- New: Gross profit
+    operating_income DECIMAL(20, 2), -- New: Operating income
     net_profit DECIMAL(20, 2),
     eps FLOAT,
+    operating_margin FLOAT, -- New: Operating margin (%)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_symbol) REFERENCES stocks(stock_symbol),
     INDEX idx_financials_stock_quarter (stock_symbol, quarter)
 );
+
 
 -- Balance Sheets table
 CREATE TABLE balance_sheets (
@@ -44,10 +48,15 @@ CREATE TABLE balance_sheets (
     stock_symbol VARCHAR(10) NOT NULL,
     quarter DATE NOT NULL,
     total_assets DECIMAL(20, 2),
+    total_liabilities DECIMAL(20, 2), -- New: Total liabilities
+    total_equity DECIMAL(20, 2), -- New: Total shareholders' equity
+    current_assets DECIMAL(20, 2), -- New: Current assets
+    current_liabilities DECIMAL(20, 2), -- New: Current liabilities
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_symbol) REFERENCES stocks(stock_symbol),
     INDEX idx_balance_sheets_stock_quarter (stock_symbol, quarter)
 );
+
 
 -- Cash Flows table
 CREATE TABLE cash_flows (
@@ -55,10 +64,15 @@ CREATE TABLE cash_flows (
     stock_symbol VARCHAR(10) NOT NULL,
     quarter DATE NOT NULL,
     operating_cash_flow DECIMAL(20, 2),
+    investing_cash_flow DECIMAL(20, 2), -- New: Cash flow from investing activities
+    financing_cash_flow DECIMAL(20, 2), -- New: Cash flow from financing activities
+    free_cash_flow DECIMAL(20, 2), -- New: Free cash flow
+    capital_expenditures DECIMAL(20, 2), -- New: Capital expenditures
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (stock_symbol) REFERENCES stocks(stock_symbol),
     INDEX idx_cash_flows_stock_quarter (stock_symbol, quarter)
 );
+
 
 -- Dividends table
 CREATE TABLE dividends (

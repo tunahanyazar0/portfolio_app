@@ -11,10 +11,36 @@ const authService = {
         username,
         password
       });
-      // login olunca dönülen token i local storage de tutmaya başlıyorki ileride diğer servicelere bu user istek atarken gönderebilsin.
-      if (response.data.token) {
+      // response.data has 2 field: access_token and token_type
+      console.log(response.data.access_token.sub)
+      // token varsa set le
+      if (response.data.access_token) {
+        // bunu set etmez isek login olarak kalmayız!
         localStorage.setItem('user', JSON.stringify(response.data));
+      } 
+      /*
+      Bu tokenden username ve role bilgisine ulaşmak için token i decode etmeliyiz çünkü 
+      bu bilgiler token içine gömülü:
+
+      Here is how to decode it:
+      import jwtDecode from 'jwt-decode';
+
+      // Assuming you have the token stored in localStorage
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user && user.token) {
+          const decodedToken = jwtDecode(user.token);
+          
+          // Access username and role
+          const username = decodedToken.sub; // Assuming 'sub' contains the username
+          const role = decodedToken.role; // Assuming 'role' is also in the token
+
+          console.log('Username:', username);
+          console.log('Role:', role);
+      } else {
+          console.log('User is not logged in');
       }
+      */
+
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

@@ -49,6 +49,7 @@ const LoginPage = () => {
         } catch (err) {
             setError(err.message || 'Failed to login');
         } finally {
+            // since we logged in, loading is set to false
             setLoading(false);
         }
     };    

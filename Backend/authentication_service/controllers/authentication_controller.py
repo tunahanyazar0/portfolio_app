@@ -59,6 +59,8 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
         username=user_credentials.username,
         password=user_credentials.password
     )
+
+    print(f"Authenticated user: {user}")
     
     if not user:
         raise HTTPException(
@@ -73,6 +75,8 @@ def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
               "role": user.role
             }
     )
+    print(access_token)
+
     
     return {"access_token": access_token, "token_type": "bearer"}
 

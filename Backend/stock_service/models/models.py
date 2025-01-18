@@ -49,11 +49,15 @@ class Financial(Base):
     stock_symbol = Column(String(10), ForeignKey('stocks.stock_symbol'), nullable=False)
     quarter = Column(Date, nullable=False)
     revenue = Column(DECIMAL(20, 2))
+    gross_profit = Column(DECIMAL(20, 2))  # Added gross profit
+    operating_income = Column(DECIMAL(20, 2))  # Added operating income
     net_profit = Column(DECIMAL(20, 2))
     eps = Column(FLOAT)
+    operating_margin = Column(FLOAT)  # Added operating margin (%)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     stock = relationship("Stock", back_populates="financials")
+
 
 class BalanceSheet(Base):
     __tablename__ = "balance_sheets"
@@ -62,9 +66,14 @@ class BalanceSheet(Base):
     stock_symbol = Column(String(10), ForeignKey('stocks.stock_symbol'), nullable=False)
     quarter = Column(Date, nullable=False)
     total_assets = Column(DECIMAL(20, 2))
+    total_liabilities = Column(DECIMAL(20, 2))  # Added total liabilities
+    total_equity = Column(DECIMAL(20, 2))  # Added total equity
+    current_assets = Column(DECIMAL(20, 2))  # Added current assets
+    current_liabilities = Column(DECIMAL(20, 2))  # Added current liabilities
     created_at = Column(DateTime, default=datetime.utcnow)
     
     stock = relationship("Stock", back_populates="balance_sheets")
+
 
 class CashFlow(Base):
     __tablename__ = "cash_flows"
@@ -73,6 +82,10 @@ class CashFlow(Base):
     stock_symbol = Column(String(10), ForeignKey('stocks.stock_symbol'), nullable=False)
     quarter = Column(Date, nullable=False)
     operating_cash_flow = Column(DECIMAL(20, 2))
+    investing_cash_flow = Column(DECIMAL(20, 2))  # Added investing cash flow
+    financing_cash_flow = Column(DECIMAL(20, 2))  # Added financing cash flow
+    free_cash_flow = Column(DECIMAL(20, 2))  # Added free cash flow
+    capital_expenditures = Column(DECIMAL(20, 2))  # Added capital expenditures
     created_at = Column(DateTime, default=datetime.utcnow)
     
     stock = relationship("Stock", back_populates="cash_flows")
