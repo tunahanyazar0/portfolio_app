@@ -6,12 +6,14 @@ from typing import List, Optional
 import yfinance as yf  # New import
 from datetime import datetime  # New import
 import pandas as pd
+from models.models import Stock, Sector, Portfolio, PortfolioHolding, StockPrice, Financial, BalanceSheet, CashFlow, Dividend
 
-from models.models import Stock, Sector, Portfolio, PortfolioHolding, StockPrice
 
 class StockService:
     def __init__(self, db: Session):
         self.db = db
+
+    # services related to stock info
 
     def create_stock(self, symbol: str, name: str, sector: str, market_cap: Decimal) -> Stock:
         # First get or create sector
@@ -46,6 +48,9 @@ class StockService:
 
     def get_stock(self, symbol: str) -> Optional[Stock]:
         return self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
+    
+
+    # services related to stock prices
 
     def get_all_stocks(self) -> List[Stock]:
         return self.db.query(Stock).all()
@@ -138,12 +143,206 @@ class StockService:
         ).all()
     
 
-    # services related to balance sheet 
+    # services related to income, balance sheet, cash flow and dividend data
+    def add_income_statement(self, stock_symbol: str):
+        """
+        Fetch and add quarterly income statement data for the given stock symbol.
+        """
+        try:
+            # check if the stock exists
+            stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+            if stock is None:
+                raise ValueError(f"Stock with symbol {stock_symbol} does not exists")
+            
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+
+            stock = yf.Ticker(stock_symbol)
+            income_statement = stock.quarterly_financials
+
+            if income_statement.empty:
+                print(f"No income statement data available for {stock_symbol}.")
+                return
+
+            for quarter, data in income_statement.items():
+                # Strip timestamp from the quarter if it exists
+                quarter_date = datetime.fromisoformat(str(quarter).split()[0]).date()
+
+                # check if revenue is null, if it is, do not add the record
+                if data.get("Total Revenue", 0) is None:
+                    continue
+
+                financial = Financial(
+                    stock_symbol=stock_symbol[:-3], # remove .IS from the end
+                    quarter=quarter_date,
+                    revenue=Decimal(data.get("Total Revenue", 0)) if not pd.isna(data.get("Total Revenue", 0)) else None,
+                    gross_profit=Decimal(data.get("Gross Profit", 0)) if not pd.isna(data.get("Gross Profit", 0)) else None,
+                    operating_income=Decimal(data.get("Operating Income", 0)) if not pd.isna(data.get("Operating Income", 0)) else None,
+                    net_profit=Decimal(data.get("Net Income", 0)) if not pd.isna(data.get("Net Income", 0)) else None,
+                    eps=data.get("Earnings Per Share", None),
+                    operating_margin=(
+                        Decimal(data.get("Operating Income", 0)) / Decimal(data.get("Total Revenue", 1)) * 100
+                        if not pd.isna(data.get("Operating Income", 0)) and not pd.isna(data.get("Total Revenue", 1))
+                        else None
+                    ),
+                )
+                self.db.add(financial)
+
+            self.db.commit()
+            print(f"Income statement data for {stock_symbol[:-3]} added successfully.")
+        except Exception as e:
+            self.db.rollback()
+            print(f"An error occurred while adding income statement data: {e}")
+
+
+    def add_balance_sheet(self, stock_symbol: str):
+        """
+        Fetch and add quarterly balance sheet data for the given stock symbol.
+        """
+        try:    
+            # check if the stock exists
+            stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+            if stock is None:
+                raise ValueError(f"Stock with symbol {stock_symbol} does not exists")
+            
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+
+            stock = yf.Ticker(stock_symbol)
+            balance_sheet = stock.quarterly_balancesheet
+
+            if balance_sheet.empty:
+                print(f"No balance sheet data available for {stock_symbol}.")
+                return
+
+            for quarter, data in balance_sheet.items():
+                # Strip timestamp from the quarter if it exists
+                quarter_date = datetime.fromisoformat(str(quarter).split()[0]).date()
+
+                # check if total assets is null, if it is, do not add the record
+                if data.get("Total Assets", 0) is None:
+                    continue
+
+                balance = BalanceSheet(
+                    stock_symbol=stock_symbol[:-3],  # remove .IS from the end
+                    quarter=quarter_date,
+                    total_assets=Decimal(data.get("Total Assets", 0)) if not pd.isna(data.get("Total Assets", 0)) else None,
+                    total_liabilities=Decimal(data.get("Total Liabilities Net Minority Interest", 0)) if not pd.isna(data.get("Total Liabilities Net Minority Interest", 0)) else None,
+                    total_equity=Decimal(data.get("Ordinary Shares Number", 0)) if not pd.isna(data.get("Ordinary Shares Number", 0)) else None,
+                    current_assets=Decimal(data.get("Current Assets", 0)) if not pd.isna(data.get("Current Assets", 0)) else None,
+                    current_liabilities=Decimal(data.get("Current Liabilities", 0)) if not pd.isna(data.get("Current Liabilities", 0)) else None,
+                )
+                self.db.add(balance)
+
+            self.db.commit()
+            print(f"Balance sheet data for {stock_symbol[:-3]} added successfully.")
+        except Exception as e:
+            self.db.rollback()
+            print(f"An error occurred while adding balance sheet data: {e}")
+
+    def add_cash_flow(self, stock_symbol: str):
+        """
+        Fetch and add quarterly cash flow data for the given stock symbol.
+        """
+        try:
+            # check if the stock exists
+            stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+            if stock is None:
+                raise ValueError(f"Stock with symbol {stock_symbol} does not exists")
+
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+
+            stock = yf.Ticker(stock_symbol)
+            cash_flow = stock.quarterly_cashflow
+
+            if cash_flow.empty:
+                print(f"No cash flow data available for {stock_symbol}.")
+                return
+
+            for quarter, data in cash_flow.items():
+                quarter_date = datetime.fromisoformat(str(quarter).split()[0]).date()
+
+                # check if operating cash flow is null, if it is, do not add the record
+                if data.get("free_cash_flow", 0) is None:
+                    continue 
+
+                flow = CashFlow(
+                    stock_symbol=stock_symbol[:-3],  # remove .IS from the end
+                    quarter=quarter_date,
+                    operating_cash_flow=Decimal(data.get("Net Cash Provided by Operating Activities", 0)) if not pd.isna(data.get("Net Cash Provided by Operating Activities", 0)) else None,
+                    investing_cash_flow=Decimal(data.get("Net Cash Used for Investing Activities", 0)) if not pd.isna(data.get("Net Cash Used for Investing Activities", 0)) else None,
+                    financing_cash_flow=Decimal(data.get("Net Cash Used Provided by Financing Activities", 0)) if not pd.isna(data.get("Net Cash Used Provided by Financing Activities", 0)) else None,
+                    free_cash_flow=Decimal(data.get("Free Cash Flow", 0)) if not pd.isna(data.get("Free Cash Flow", 0)) else None,
+                    capital_expenditures=Decimal(data.get("Capital Expenditure", 0)) if not pd.isna(data.get("Capital Expenditure", 0)) else None,
+                )
+                self.db.add(flow)
+
+            self.db.commit()
+            print(f"Cash flow data for {stock_symbol[:-3]} added successfully.")
+        except Exception as e:
+            self.db.rollback()
+            print(f"An error occurred while adding cash flow data: {e}")
+
+    def add_dividend(self, stock_symbol: str):
+        """
+        Fetch and add dividend data for the given stock symbol.
+        """
+        try:
+            # check if the stock exists
+            stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+            if stock is None:
+                raise ValueError(f"Stock with symbol {stock_symbol} does not exists")
+
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+
+            stock = yf.Ticker(stock_symbol)
+            dividends = stock.dividends
+
+            if dividends.empty:
+                print(f"No dividend data available for {stock_symbol}.")
+                return
+
+            for date, amount in dividends.items():
+                dividend = Dividend(
+                    stock_symbol=stock_symbol[:-3],  # remove .IS from the end
+                    payment_date=date.date(),
+                    amount=Decimal(amount),
+                )
+                self.db.add(dividend)
+
+            self.db.commit()
+            print(f"Dividend data for {stock_symbol[:-3]} added successfully.")
+        except Exception as e:
+            self.db.rollback()
+            print(f"An error occurred while adding dividend data: {e}")
+
+    # services related to returning them
+
+    # Function to return all financial data for a given stock symbol
+    def get_financial_data(self, stock_symbol: str) -> List[Financial]:
+        # check if the stock exists
+        stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+
+        return self.db.query(Financial).filter(Financial.stock_symbol == stock_symbol).all()
+
+    # Function to return all balance sheet data for a given stock symbol
+    def get_balance_sheet_data(self, stock_symbol: str) -> List[BalanceSheet]:
+        # check if the stock exists
+        stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+
+        return self.db.query(BalanceSheet).filter(BalanceSheet.stock_symbol == stock_symbol).all()
     
+    # Function to return all cash flow data for a given stock symbol
+    def get_cash_flow_data(self, stock_symbol: str) -> List[CashFlow]:
+        # check if the stock exists
+        stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+
+        return self.db.query(CashFlow).filter(CashFlow.stock_symbol == stock_symbol).all()
 
 
-
-    
+    # services related to portfolio management
 
     def create_portfolio(self, user_id: int, name: str) -> Portfolio:
         portfolio = Portfolio(

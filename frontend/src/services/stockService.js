@@ -30,6 +30,8 @@ const stockService = {
     }
   },
 
+  // stock price related services
+
   addStockPrices: async (stockPriceInput) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/${stockPriceInput.stock_symbol}/add-price`, stockPriceInput);
@@ -56,6 +58,36 @@ const stockService = {
         throw error.response.data;
     }
     },
+
+    // balance sheet, income statement, and cash flow statement services
+    getFinancialData: async (symbol) => {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/financials/${symbol}`);
+          return response.data;
+        } catch (error) {
+          throw error.response.data;
+        }
+      },
+    
+      getBalanceSheetData: async (symbol) => {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/balance-sheet/${symbol}`);
+          return response.data;
+        } catch (error) {
+          throw error.response.data;
+        }
+      },
+    
+      getCashFlowData: async (symbol) => {
+        try {
+          const response = await axios.get(`${API_BASE_URL}/cash-flow/${symbol}`);
+          return response.data;
+        } catch (error) {
+          throw error.response.data;
+        }
+      },
+
+    // Portfolio service
 
   createPortfolio: async (portfolio) => {
     try {
