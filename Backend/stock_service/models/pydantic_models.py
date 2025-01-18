@@ -19,7 +19,7 @@ class StockResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# bu stock price oluştururken
+# bu stock price oluştururken ve ayrıca stock price isterken bir date range de 
 class StockPriceInput(BaseModel):
     stock_symbol: str
     start_date: date
@@ -30,6 +30,11 @@ class StockPriceInput(BaseModel):
 class StockPriceRequest(BaseModel):
     stock_symbol: str
     date: str
+
+class StockPriceInRangeRequest(BaseModel):
+    stock_symbol: str
+    start_date: str
+    end_date: str
 
 class StockPriceResponse(BaseModel):
     stock_symbol: str

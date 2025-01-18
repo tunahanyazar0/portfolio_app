@@ -43,20 +43,56 @@ async def add_stock_prices(stock_price_input: StockPriceInput, db: Session = Dep
     return {"message": f"Stock prices for {stock_price_input.stock_symbol} added from {stock_price_input.start_date} to {stock_price_input.end_date}."}
 
 
-# controller to get stock price on a given date
+"""
+example request: http://localhost:8001/api/stocks/price
+{
+    "stock_symbol": "AAPL",
+    "date": "2021-01-04"
+}
+
+example response:
+{   
+    "stock_symbol": "AAPL",
+    "date": "2021-01-04",
+    "close_price": 129.41
+}
+"""
 @router.post("/price", response_model=StockPriceResponse)
 def get_stock_price(request: StockPriceRequest, db: Session = Depends(get_db)):
     stock_service = StockService(db)
     price = stock_service.get_stock_price_on_date(request.stock_symbol, request.date)
     
+    # if price is none, do not raise error since it might be a weekend or a holiday
     if price is None:
-        raise HTTPException(status_code=404, detail="Stock price not found")
+        return StockPriceResponse(
+            stock_symbol=request.stock_symbol,
+            date=request.date,
+            close_price=None
+        )
     
     return StockPriceResponse(
         stock_symbol=request.stock_symbol,
         date=request.date,
         close_price=price
     )
+
+# endpoint to return the stock prices for a given stock symbol and date range
+@router.post("/prices", response_model=List[StockPriceResponse])
+def get_stock_prices(request: StockPriceInRangeRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    prices = stock_service.get_stock_prices(request.stock_symbol, request.start_date, request.end_date)
+    
+    # Convert date to string
+    response = [
+        StockPriceResponse(
+            stock_symbol=price.stock_symbol,
+            date=price.date.isoformat(),  # Convert date to string
+            close_price=price.close_price
+        )
+        for price in prices
+    ]
+    
+    return response
 
 
 @router.post("/portfolios", response_model=PortfolioResponse)

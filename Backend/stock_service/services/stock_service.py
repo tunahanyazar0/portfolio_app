@@ -128,6 +128,22 @@ class StockService:
         if stock_price:
             return stock_price.close_price
         return None
+    
+    def get_stock_prices(self, stock_symbol: str, start_date: str, end_date: str) -> List[StockPrice]:
+        """Retrieve the stock prices for a given stock symbol and date range."""
+        return self.db.query(StockPrice).filter(
+            StockPrice.stock_symbol == stock_symbol,
+            StockPrice.date >= start_date,
+            StockPrice.date <= end_date
+        ).all()
+    
+
+    # services related to balance sheet 
+    
+
+
+
+    
 
     def create_portfolio(self, user_id: int, name: str) -> Portfolio:
         portfolio = Portfolio(
