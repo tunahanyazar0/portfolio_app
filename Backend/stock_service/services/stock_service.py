@@ -13,8 +13,49 @@ class StockService:
     def __init__(self, db: Session):
         self.db = db
 
-    # services related to stock information
-    def create_stock(self, symbol: str, name: str, sector: str, market_cap: Decimal) -> Stock:
+
+    # Using yahoo finance to create a stock and related sector object
+    def create_stock(self, symbol : str) -> Stock:
+        """
+        Create a new stock object using the stock symbol and fetch additional information using Yahoo Finance.
+        """
+        # first check if the stock exists
+        stock = self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
+
+        if stock:
+            raise ValueError(f"Stock with symbol {symbol} already exists")
+        
+        # add .IS to the end of the stock symbol since yahoo finance excepts that
+        symbol += ".IS"
+        stock = yf.Ticker(symbol)
+        info = stock.info
+
+        sector_info = info.get("industry", None)
+        if sector_info is None:
+            raise ValueError(f"No sector information available for stock {symbol}")
+        
+        # then check sector exists if not create
+        sector_obj = self.db.query(Sector).filter(Sector.name == sector_info).first()
+        if not sector_obj:
+            sector_obj = Sector(name=sector_info)
+            self.db.add(sector_obj)
+            self.db.commit()
+            self.db.refresh(sector_obj)
+        
+        # then create the stock object
+        stock = Stock(
+            stock_symbol= symbol[:-3], # remove .IS from the end since we keep the symbol without .IS in the db
+            name=info.get("longName", None),
+            sector_id= sector_obj.sector_id,
+            market_cap=  Decimal(info.get("marketCap", 0))
+        )
+        self.db.add(stock)
+        self.db.commit()
+        self.db.refresh(stock)
+        return stock
+
+    # Create stock manually without using yahoo finance
+    def create_stock_2(self, symbol: str, name: str, sector: str, market_cap: Decimal) -> Stock:
         # First get or create sector
         sector_obj = self.db.query(Sector).filter(Sector.name == sector).first()
         if not sector_obj:
@@ -57,8 +98,8 @@ class StockService:
         stock = yf.Ticker(stock_symbol)
         info = stock.info
         return info
-
-    # function to get basic info about a stock
+ 
+    # function to get basic info about a stock from db
     def get_stock(self, symbol: str) -> Optional[Stock]:
         return self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
     
@@ -78,7 +119,6 @@ class StockService:
             return results[:5]
 
         return results
-
 
     # services related to stock prices
     def add_stock_price(self, stock_symbol: str, start_date: str, end_date: str):

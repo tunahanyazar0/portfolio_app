@@ -14,58 +14,10 @@ router = APIRouter(
     tags=["stocks"]
 )
 
-# only admin or moderator can add stock to the system
-@router.post("/", response_model=StockResponse)
-async def create_stock(stock: StockCreate, db: Session = Depends(get_db), username: str = Depends(verify_role)):
-    service = StockService(db)
-    existing_stock = service.get_stock(stock.symbol)
-    if existing_stock:
-        raise HTTPException(status_code=400, detail="Stock already exists")
-    return service.create_stock(stock.symbol, stock.name, stock.sector, Decimal(str(stock.market_cap)))
 
+# ARTIK STOCK PRİCE HAKKINDA DB  ISLEMI YAPMICAZ, DB YE EKLEMEK VE ORDAN CEKMEK YERİNE YAHOO FİNANCE DEN CEKİCEZ
 
-# ENDPOINT FOR STOCK PRICES SERVICES
-@router.post("/{symbol}/add-price")
-async def add_stock_prices(stock_price_input: StockPriceInput, db: Session = Depends(get_db)):
-    stock_service = StockService(db)
-    stock_service.add_stock_price(stock_price_input.stock_symbol, stock_price_input.start_date.isoformat(), stock_price_input.end_date.isoformat())
-    return {"message": f"Stock prices for {stock_price_input.stock_symbol} added from {stock_price_input.start_date} to {stock_price_input.end_date}."}
-
-"""
-example request: http://localhost:8001/api/stocks/price
-{
-    "stock_symbol": "AAPL",
-    "date": "2021-01-04"
-}
-
-example response:
-{   
-    "stock_symbol": "AAPL",
-    "date": "2021-01-04",
-    "close_price": 129.41
-}
-"""
-"""
-@router.post("/price", response_model=StockPriceResponse)
-def get_stock_price(request: StockPriceRequest, db: Session = Depends(get_db)):
-    stock_service = StockService(db)
-    price = stock_service.get_stock_price_on_date(request.stock_symbol, request.date)
-    
-    # if price is none, do not raise error since it might be a weekend or a holiday
-    if price is None:
-        return StockPriceResponse(
-            stock_symbol=request.stock_symbol,
-            date=request.date,
-            close_price=None
-        )
-    
-    return StockPriceResponse(
-        stock_symbol=request.stock_symbol,
-        date=request.date,
-        close_price=price
-    )
-"""
-
+# ENDPOİNTS RELATED TO PORTFOLIOS
 @router.post("/portfolios", response_model=PortfolioResponse)
 def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
     service = StockService(db)
@@ -119,7 +71,17 @@ def delete_holding(holding_id: int, db: Session = Depends(get_db)):
     return {"message": "Holding deleted successfully"}
 
 
-# ANLIK KULLANILAN ENDPOINTLER
+# only admin or moderator can add stock to the system
+# it takes the stock symbol as input and returns the stock object as output if the stock is successfully added
+# uses yahoo finance for additional info
+@router.post("/", response_model=StockResponse) # , username: str = Depends(verify_role)
+async def create_stock(stock_symbol: str, db: Session = Depends(get_db)):
+    service = StockService(db)
+    existing_stock = service.get_stock(stock_symbol)
+    if existing_stock:
+        raise HTTPException(status_code=400, detail="Stock already exists")
+    return service.create_stock(stock_symbol)
+
 @router.get("/{symbol}", response_model=StockResponse)
 def get_stock(symbol: str, db: Session = Depends(get_db)):
     service = StockService(db)
