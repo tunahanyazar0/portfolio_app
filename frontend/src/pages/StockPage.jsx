@@ -392,13 +392,19 @@ const StockPage = () => {
   return (
     <Container>
 
-      {/* Sidebar Component */}
+      {/* Sidebar Component 
+
+      - navbar gelince görüntüyü bozdu
+
       <Sidebar
         isOpen={isSidebarOpen}
         toggleSidebar={toggleSidebar}
         fields={fields}
         onNavigate={handleNavigate}
       />
+      
+      */}
+
 
       {/* Stock Price Section */}
       <Box ref={priceInfoRef} sx={{ my: 4 }}>
@@ -438,15 +444,18 @@ const StockPage = () => {
         <Grid container spacing={4} sx={{ mb: 4 }}>
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 2 }}>
-              <Typography variant="body1"><strong>Beta:</strong> {stockInfo.beta}</Typography>
-              <Typography variant="body1"><strong>Trailing PE:</strong> {stockInfo.trailingPE}</Typography>
-              <Typography variant="body1"><strong>Forward PE:</strong> {stockInfo.forwardPE}</Typography>
-              <Typography variant="body1"><strong>Price to Sales:</strong> {stockInfo.priceToSalesTrailing12Months}</Typography>
-              <Typography variant="body1"><strong>Profit Margins:</strong> {stockInfo.profitMargins}</Typography>
-              <Typography variant="body1"><strong>Book Value:</strong> {stockInfo.bookValue}</Typography>
-              <Typography variant="body1"><strong>Price to Book:</strong> {stockInfo.priceToBook}</Typography>
-              <Typography variant="body1"><strong>Trailing EPS:</strong> {stockInfo.trailingEps}</Typography>
-              <Typography variant="body1"><strong>Forward EPS:</strong> {stockInfo.forwardEps}</Typography>
+              {/* Ratios 
+                  - We display the ratios if they are not null
+              */}
+              {stockInfo.beta && <Typography variant="body1"><strong>Beta:</strong> {stockInfo.beta}</Typography>}
+              {stockInfo.trailingPE && <Typography variant="body1"><strong>Trailing PE:</strong> {stockInfo.trailingPE}</Typography>}
+              {stockInfo.forwardPE && <Typography variant="body1"><strong>Forward PE:</strong> {stockInfo.forwardPE}</Typography>}
+              {stockInfo.priceToSalesTrailing12Months && <Typography variant="body1"><strong>Price to Sales:</strong> {stockInfo.priceToSalesTrailing12Months}</Typography>}
+              {stockInfo.profitMargins && <Typography variant="body1"><strong>Profit Margins:</strong> {stockInfo.profitMargins}</Typography>}
+              {stockInfo.bookValue && <Typography variant="body1"><strong>Book Value:</strong> {stockInfo.bookValue}</Typography>}
+              {stockInfo.priceToBook && <Typography variant="body1"><strong>Price to Book:</strong> {stockInfo.priceToBook}</Typography>}
+              {stockInfo.trailingEps && <Typography variant="body1"><strong>Trailing EPS:</strong> {stockInfo.trailingEps}</Typography>}
+              {stockInfo.forwardEps && <Typography variant="body1"><strong>Forward EPS:</strong> {stockInfo.forwardEps}</Typography>}
             </Paper>
           </Grid>
         </Grid>
@@ -460,17 +469,21 @@ const StockPage = () => {
         <Grid container spacing={4} sx={{ mb: 4 }}>
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 2 }}>
-              <Typography variant="body1"><strong>Previous Close:</strong> {stockInfo.regularMarketPreviousClose}</Typography>
-              <Typography variant="body1"><strong>52 Week Low:</strong> {stockInfo.fiftyTwoWeekLow}</Typography>
-              <Typography variant="body1"><strong>52 Week High:</strong> {stockInfo.fiftyTwoWeekHigh}</Typography>
-              <Typography variant="body1"><strong>50 Day Avg:</strong> {stockInfo.fiftyDayAverage}</Typography>
-              <Typography variant="body1"><strong>200 Day Avg:</strong> {stockInfo.twoHundredDayAverage}</Typography>
-              <Typography variant="body1"><strong>52 Week Change:</strong> {stockInfo['52WeekChange']}</Typography>
-              <Typography variant="body1"><strong>Target High:</strong> {stockInfo.targetHighPrice}</Typography>
-              <Typography variant="body1"><strong>Target Low:</strong> {stockInfo.targetLowPrice}</Typography>
-              <Typography variant="body1"><strong>Mean Target:</strong> {stockInfo.targetMeanPrice}</Typography>
-              <Typography variant="body1"><strong>Recommendation:</strong> {stockInfo.recommendationKey}</Typography>
-              <Typography variant="body1"><strong>Analyst Opinions:</strong> {stockInfo.numberOfAnalystOpinions}</Typography>
+              {/*
+                - We display the ratios if they are not null
+              */
+              }
+              {stockInfo.regularMarketPreviousClose && <Typography variant="body1"><strong>Previous Close:</strong> {stockInfo.regularMarketPreviousClose}</Typography>}
+              {stockInfo.fiftyTwoWeekLow && <Typography variant="body1"><strong>52 Week Low:</strong> {stockInfo.fiftyTwoWeekLow}</Typography>}
+              {stockInfo.fiftyTwoWeekHigh && <Typography variant="body1"><strong>52 Week High:</strong> {stockInfo.fiftyTwoWeekHigh}</Typography>}
+              {stockInfo.fiftyDayAverage && <Typography variant="body1"><strong>50 Day Avg:</strong> {stockInfo.fiftyDayAverage}</Typography>}
+              {stockInfo.twoHundredDayAverage && <Typography variant="body1"><strong>200 Day Avg:</strong> {stockInfo.twoHundredDayAverage}</Typography>}
+              {stockInfo['52WeekChange'] && <Typography variant="body1"><strong>52 Week Change:</strong> {stockInfo['52WeekChange']}</Typography>}
+              {stockInfo.targetHighPrice && <Typography variant="body1"><strong>Target High:</strong> {stockInfo.targetHighPrice}</Typography>}
+              {stockInfo.targetLowPrice && <Typography variant="body1"><strong>Target Low:</strong> {stockInfo.targetLowPrice}</Typography>}
+              {stockInfo.targetMeanPrice && <Typography variant="body1"><strong>Mean Target:</strong> {stockInfo.targetMeanPrice}</Typography>}
+              {stockInfo.numberOfAnalystOpinions && <Typography variant="body1"><strong>Analyst Opinions:</strong> {stockInfo.numberOfAnalystOpinions}</Typography>}
+              {stockInfo.recommendationKey && <Typography variant="body1"><strong>Recommendation:</strong> {stockInfo.recommendationKey}</Typography>}
             </Paper>
           </Grid>
         </Grid>
@@ -484,10 +497,15 @@ const StockPage = () => {
         <Grid container spacing={4} sx={{ mb: 4 }}>
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 2  }}>
-              <Typography variant="body1"><strong>Total Debt:</strong> {stockInfo.totalDebt}</Typography>
-              <Typography variant="body1"><strong>Quick Ratio:</strong> {stockInfo.quickRatio}</Typography>
-              <Typography variant="body1"><strong>Current Ratio:</strong> {stockInfo.currentRatio}</Typography>
-              <Typography variant="body1"><strong>Debt to Equity:</strong> {stockInfo.debtToEquity}</Typography>
+              {
+                /*
+                  Display them if they are not null
+                */
+              }
+              {stockInfo.totalDebt && <Typography variant="body1"><strong>Total Debt:</strong> {stockInfo.totalDebt}</Typography>}
+              {stockInfo.quickRatio && <Typography variant="body1"><strong>Quick Ratio:</strong> {stockInfo.quickRatio}</Typography>}
+              {stockInfo.currentRatio && <Typography variant="body1"><strong>Current Ratio:</strong> {stockInfo.currentRatio}</Typography>}
+              {stockInfo.debtToEquity && <Typography variant="body1"><strong>Debt to Equity:</strong> {stockInfo.debtToEquity}</Typography>}
             </Paper>
           </Grid>
         </Grid>

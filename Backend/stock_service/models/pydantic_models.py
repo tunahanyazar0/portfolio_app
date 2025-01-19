@@ -140,3 +140,11 @@ class BalanceSheetResponse(BaseModel):
 
     class Config:
         from_attributes = True  # This will allow the response model to be created from the attributes of the class
+
+
+class SectorResponse(BaseModel):
+    sector_id: int
+    name: str
+
+    class Config:
+        from_attributes = True
