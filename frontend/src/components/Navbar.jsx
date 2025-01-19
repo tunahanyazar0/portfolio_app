@@ -156,6 +156,7 @@ const Navbar = () => {
                   left: 0,
                   right: 0,
                   mt: 1,
+                  zIndex: 1300, // Ensures the dropdown is above other elements
                   borderRadius: '12px',
                   maxHeight: '400px',
                   overflowY: 'auto',
@@ -168,7 +169,10 @@ const Navbar = () => {
                     <ListItem
                       button
                       key={stock.stock_symbol}
-                      onClick={() => navigate(`/stocks/${stock.stock_symbol}`)}
+                      onClick={() => {
+                        setSearchQuery(''); // Reset the search input
+                        navigate(`/stocks/${stock.stock_symbol}`);
+                      }}
                       sx={{
                         py: 1.5,
                         px: 2,
@@ -273,26 +277,7 @@ const Navbar = () => {
             </Menu>
           </Box>
         ) : (
-          <Button
-            color="inherit"
-            onClick={() => navigate('/login')}
-            sx={{
-              ml: { xs: 1, sm: 3 },
-              px: 3,
-              py: 1,
-              borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              fontWeight: 500,
-              transition: 'all 0.2s',
-              '&:hover': {
-                border: '1px solid rgba(255, 255, 255, 0.5)',
-                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                transform: 'translateY(-1px)',
-              },
-            }}
-          >
-            Login
-          </Button>
+            null
         )}
       </Toolbar>
     </AppBar>
