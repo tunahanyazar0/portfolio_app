@@ -65,6 +65,21 @@ class StockService:
     def get_all_stocks(self) -> List[Stock]:
         return self.db.query(Stock).all()
     
+    # search for stocks by symbol or name
+    def search_stocks(self, query: str) -> List[Stock]:
+        print(f"Searching for stocks with query: {query}")
+        results = self.db.query(Stock).filter(
+            (Stock.stock_symbol.ilike(f"%{query}%")) | (Stock.name.ilike(f"%{query}%"))
+        ).all()
+        print(f"Found {len(results)} stocks")
+
+        # return first 5 if length is greater than 5
+        if len(results) > 5:
+            return results[:5]
+
+        return results
+
+
     # services related to stock prices
     def add_stock_price(self, stock_symbol: str, start_date: str, end_date: str):
         try:    
@@ -193,7 +208,6 @@ class StockService:
         except Exception as e:
             print(f"An error occurred while fetching stock prices: {e}")
         
-
     # services related to income, balance sheet, cash flow and dividend data
     def add_income_statement(self, stock_symbol: str):
         """
@@ -244,7 +258,6 @@ class StockService:
         except Exception as e:
             self.db.rollback()
             print(f"An error occurred while adding income statement data: {e}")
-
 
     def add_balance_sheet(self, stock_symbol: str):
         """
@@ -394,7 +407,6 @@ class StockService:
 
 
     # services related to portfolio management
-
     def create_portfolio(self, user_id: int, name: str) -> Portfolio:
         portfolio = Portfolio(
             user_id=user_id,

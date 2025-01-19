@@ -332,3 +332,13 @@ def add_dividend_to_db(request: DividendRequest, db: Session = Depends(get_db)):
     
     # return a success message
     return {"message": "Dividend added successfully"}
+
+
+# ENDPOINT FOR SEARCHING STOCKS
+@router.get("/search/{query}", response_model=List[StockResponse])
+def search_stocks(query, db: Session = Depends(get_db)):
+    service = StockService(db)
+    stocks = service.search_stocks(query)
+    if not stocks:
+        raise HTTPException(status_code=404, detail="No stocks found")
+    return stocks

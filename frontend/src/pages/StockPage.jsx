@@ -7,6 +7,7 @@ import stockService from '../services/stockService';
 import BarChart from '../components/BarChart';
 import Sidebar from '../components/Sidebar';
 import { useRef } from 'react';
+import Navbar from '../components/Navbar';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -390,6 +391,7 @@ const StockPage = () => {
   // else, render the stock page
   return (
     <Container>
+
       {/* Sidebar Component */}
       <Sidebar
         isOpen={isSidebarOpen}
