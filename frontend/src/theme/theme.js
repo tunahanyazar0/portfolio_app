@@ -1,55 +1,22 @@
+// src/theme/theme.js
 import { createTheme } from '@mui/material/styles';
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1976d2', // your primary color
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#1372d1', // Blue color for primary actions
     },
     secondary: {
-      main: '#9c27b0', // your secondary color
-      light: '#ba68c8',
-      dark: '#7b1fa2',
-    },
-    error: {
-      main: '#d32f2f',
+      main: '#ff4081', // Pink color for secondary actions
     },
     background: {
-      default: '#fff',
-      paper: '#fff',
+      default: '#f5f5f5', // Light grey background
     },
   },
   typography: {
-    fontFamily: [
-      'Roboto',
-      'Arial',
-      'sans-serif'
-    ].join(','),
-    h1: {
-      fontSize: '2.5rem',
-      fontWeight: 600,
-    },
-    h2: {
-      fontSize: '2rem',
-      fontWeight: 500,
-    },
-    body1: {
-      fontSize: '1rem',
-    },
-  },
-  spacing: 8, // Base spacing unit
-  shape: {
-    borderRadius: 4,
-  },
-  components: {
-    // Custom component styles
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none', // Prevents automatic uppercase transformation
-        },
-      },
+    fontFamily: 'Roboto, Arial, sans-serif',
+    h5: {
+      fontWeight: 500, // Header styling
     },
   },
 });

@@ -81,6 +81,16 @@ const authService = {
     return !!user?.token; // returns true if user exists and has token
   }, 
 
+  getUserInformationByUsername: async (username) => {
+    try {
+      const response = await axios.get(`${Authentication_backend_url}/users/${username}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+
   logout: () => {
     localStorage.removeItem('user');
   }

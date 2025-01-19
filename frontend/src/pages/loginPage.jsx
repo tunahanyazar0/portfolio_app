@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
 import {
-  Container, Box, Typography, TextField, Button, Paper, Link, 
-  ThemeProvider, Alert
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Link,
+  ThemeProvider,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import theme from '../theme/theme';
 import { useNavigate } from 'react-router-dom';
@@ -9,50 +17,44 @@ import { useAuth } from '../context/AuthContext'; // Import useAuth
 import authService from '../services/authService';
 
 const LoginPage = () => {
-    const navigate = useNavigate();
-    const { login } = useAuth(); // Get login function from AuthContext
-    
-    const [formData, setFormData] = useState({
-        username: '',
-        password: ''
-    });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { login } = useAuth(); // Get login function from AuthContext
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prevState => ({
-            ...prevState,
-            [name]: value
-        }));
-    };
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
-        
-        try {
-            // Call authService to authenticate, response is the user data
-            const response = await authService.login(
-                formData.username, 
-                formData.password
-            );
-            
-            // Update global auth state using AuthContext
-            // bu user datayı (yukarıdaki response), auth context teki userData ya assign eden
-            login(response);
-            
-            // Navigate to dashboard on success
-            navigate('/dashboard');
-            
-        } catch (err) {
-            setError(err.message || 'Failed to login');
-        } finally {
-            // since we logged in, loading is set to false
-            setLoading(false);
-        }
-    };    
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      // Call authService to authenticate, response is the user data
+      const response = await authService.login(formData.username, formData.password);
+
+      // Update global auth state using AuthContext
+      login(response);
+
+      // Navigate to dashboard on success
+      navigate('/dashboard');
+    } catch (err) {
+      setError(err.message || 'Failed to login');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -66,15 +68,15 @@ const LoginPage = () => {
           }}
         >
           <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
-            <Typography component="h1" variant="h1" align="center" gutterBottom>
+            <Typography component="h1" variant="h4" align="center" gutterBottom>
               Login
             </Typography>
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-            {error && (
+              {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
+                  {error}
                 </Alert>
-            )}
+              )}
               <TextField
                 margin="normal"
                 required
@@ -103,8 +105,10 @@ const LoginPage = () => {
                 type="submit"
                 fullWidth
                 variant="contained"
+                color="primary"
                 sx={{ mt: 3, mb: 2 }}
-                disabled = {loading}
+                disabled={loading}
+                startIcon={loading && <CircularProgress size={20} />}
               >
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>

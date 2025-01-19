@@ -1,15 +1,16 @@
-// portfolio_app/frontend/src/pages/dashboard.jsx
-
 import React from 'react';
+import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
-    return (
-        <div>
-            <h1>Dashboard</h1>
-            <p>Welcome to your dashboard!</p>
-            {/* Add more components or features here */}
-        </div>
-    );
+  return (
+    <div>
+      <Navbar />
+      <div>
+        {/* Dashboard Content */}
+        <h1>Welcome to the Dashboard</h1>
+      </div>
+    </div>
+  );
 };
 
 export default Dashboard;

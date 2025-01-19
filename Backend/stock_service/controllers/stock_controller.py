@@ -23,29 +23,13 @@ async def create_stock(stock: StockCreate, db: Session = Depends(get_db), userna
         raise HTTPException(status_code=400, detail="Stock already exists")
     return service.create_stock(stock.symbol, stock.name, stock.sector, Decimal(str(stock.market_cap)))
 
-@router.get("/{symbol}", response_model=StockResponse)
-def get_stock(symbol: str, db: Session = Depends(get_db)):
-    service = StockService(db)
-    stock = service.get_stock(symbol)
-    if not stock:
-        raise HTTPException(status_code=404, detail="Stock not found")
-    return stock
-
-@router.get("/", response_model=List[StockResponse])
-def get_all_stocks(db: Session = Depends(get_db)):
-    service = StockService(db)
-    return service.get_all_stocks()
-
 
 # ENDPOINT FOR STOCK PRICES SERVICES
-
 @router.post("/{symbol}/add-price")
 async def add_stock_prices(stock_price_input: StockPriceInput, db: Session = Depends(get_db)):
     stock_service = StockService(db)
     stock_service.add_stock_price(stock_price_input.stock_symbol, stock_price_input.start_date.isoformat(), stock_price_input.end_date.isoformat())
     return {"message": f"Stock prices for {stock_price_input.stock_symbol} added from {stock_price_input.start_date} to {stock_price_input.end_date}."}
-
-
 
 """
 example request: http://localhost:8001/api/stocks/price
@@ -60,6 +44,7 @@ example response:
     "date": "2021-01-04",
     "close_price": 129.41
 }
+"""
 """
 @router.post("/price", response_model=StockPriceResponse)
 def get_stock_price(request: StockPriceRequest, db: Session = Depends(get_db)):
@@ -79,12 +64,146 @@ def get_stock_price(request: StockPriceRequest, db: Session = Depends(get_db)):
         date=request.date,
         close_price=price
     )
+"""
 
-# endpoint to return the stock prices for a given stock symbol and date range
-@router.post("/prices", response_model=List[StockPriceResponse])
+@router.post("/portfolios", response_model=PortfolioResponse)
+def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
+    service = StockService(db)
+    return service.create_portfolio(portfolio.user_id, portfolio.name)
+
+@router.get("/portfolios/{portfolio_id}", response_model=PortfolioResponse)
+def get_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
+    service = StockService(db)
+    portfolio = service.get_portfolio(portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    return portfolio
+
+@router.get("/portfolios/user/{user_id}", response_model=List[PortfolioResponse])
+def get_user_portfolios(user_id: int, db: Session = Depends(get_db)):
+    service = StockService(db)
+    return service.get_user_portfolios(user_id)
+
+@router.post("/portfolios/{portfolio_id}/holdings", response_model=HoldingResponse)
+def add_holding(
+    portfolio_id: int,
+    holding: HoldingCreate,
+    db: Session = Depends(get_db)
+):
+    service = StockService(db)
+    portfolio = service.get_portfolio(portfolio_id)
+    if not portfolio:
+        raise HTTPException(status_code=404, detail="Portfolio not found")
+    stock = service.get_stock(holding.symbol)
+    if not stock:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    return service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
+
+@router.put("/portfolios/holdings/{holding_id}", response_model=HoldingResponse)
+def update_holding(
+    holding_id: int,
+    holding: HoldingUpdate,
+    db: Session = Depends(get_db)
+):
+    service = StockService(db)
+    holding_obj = service.update_holding(holding_id, holding.quantity, Decimal(str(holding.price)))
+    if not holding_obj:
+        raise HTTPException(status_code=404, detail="Holding not found")
+    return holding_obj
+
+@router.delete("/portfolios/holdings/{holding_id}")
+def delete_holding(holding_id: int, db: Session = Depends(get_db)):
+    service = StockService(db)
+    if not service.delete_holding(holding_id):
+        raise HTTPException(status_code=404, detail="Holding not found")
+    return {"message": "Holding deleted successfully"}
+
+
+# ANLIK KULLANILAN ENDPOINTLER
+@router.get("/{symbol}", response_model=StockResponse)
+def get_stock(symbol: str, db: Session = Depends(get_db)):
+    service = StockService(db)
+    stock = service.get_stock(symbol)
+    if not stock:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    return stock
+
+@router.get("/", response_model=List[StockResponse])
+def get_all_stocks(db: Session = Depends(get_db)):
+    service = StockService(db)
+    return service.get_all_stocks()
+
+# To get general info about a stock using yahoo finance
+"""
+example input: http://localhost:8001/api/stocks/AAPL/info
+example output:
+{
+    "symbol": "AAPL",
+    "name": "Apple Inc.",
+    "sector": "Technology",
+    "market_cap": 2.2e12
+    ...
+}
+"""
+@router.get("/{symbol}/info")
+def get_stock_info(symbol: str, db: Session = Depends(get_db)):
+    service = StockService(db)
+    stock_info = service.get_stock_info(symbol)
+    if not stock_info:
+        raise HTTPException(status_code=404, detail="Stock info not found")
+    return stock_info
+
+
+# To get the recent stock price of a stock
+"""
+example input: http://localhost:8001/api/stocks/AAPL/price
+example output:
+{   
+    "stock_symbol": "AAPL",
+    "date": "2021-01-04",
+    "close_price": 129.41
+}
+"""
+@router.get("/{symbol}/price", response_model=StockPriceResponse)
+def get_current_stock_price(symbol: str, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    price = stock_service.get_current_stock_price(symbol)
+    if price is None:
+        raise HTTPException(status_code=404, detail="Stock price not found")
+    return StockPriceResponse(
+        stock_symbol=symbol.upper(),
+        date=date.today().isoformat(),
+        close_price=price
+    )
+
+
+# To get the stock prices for a given stock symbol and date range
+"""
+example input: 
+{
+    "stock_symbol": "AAPL",
+    "start_date": "2021-01-01",
+    "end_date": "2021-01-03"
+}
+
+example output:
+[
+    {
+        "stock_symbol": "AAPL",
+        "date": "2021-01-01",
+        "close_price": 129.41
+    },
+    {
+        "stock_symbol": "AAPL",
+        "date": "2021-01-02",
+        "close_price": 131.01
+    }
+]
+"""
+@router.post("/prices-range", response_model=List[StockPriceResponse])
 def get_stock_prices(request: StockPriceInRangeRequest, db: Session = Depends(get_db)):
     stock_service = StockService(db)
-    prices = stock_service.get_stock_prices(request.stock_symbol, request.start_date, request.end_date)
+    prices = stock_service.get_stock_price_in_range(request.stock_symbol, request.start_date, request.end_date)
     
     # Convert date to string
     response = [
@@ -98,100 +217,7 @@ def get_stock_prices(request: StockPriceInRangeRequest, db: Session = Depends(ge
     
     return response
 
-
-# ENDPOINT FOR ADDING DATA TO DB
-@router.post("/add-income-statement")
-def add_income_statement_to_db(request: IncomeStatementRequest, db: Session = Depends(get_db)):
-    stock_service = StockService(db)
-    print("request.stock_symbol", request.stock_symbol)
-    stock_service.add_income_statement(request.stock_symbol)
-    
-    # return a success message
-    return {"message": "Income statement added successfully"}
-
-# ENDPOINT FOR ADDING BALANCE SHEET DATA TO DB
-@router.post("/add-balance-sheet")
-def add_balance_sheet_to_db(request: BalanceSheetRequest, db: Session = Depends(get_db)):
-    stock_service = StockService(db)
-    stock_service.add_balance_sheet(request.stock_symbol)
-    
-    # return a success message
-    return {"message": "Balance sheet added successfully"}
-
-# ENDPOINT FOR ADDING CASH FLOW DATA TO DB
-@router.post("/add-cash-flow")
-def add_cash_flow_to_db(request: CashFlowRequest, db: Session = Depends(get_db)):
-    stock_service = StockService(db)
-    stock_service.add_cash_flow(request.stock_symbol)
-    
-    # return a success message
-    return {"message": "Cash flow added successfully"}
-
-
-"""
-# Income Statement Response
-class IncomeStatementResponse(BaseModel):
-    stock_symbol: str
-    quarter: str
-    revenue: Optional[Decimal]
-    gross_profit: Optional[Decimal]  # Added gross profit
-    operating_income: Optional[Decimal]  # Added operating income
-    net_profit: Optional[Decimal]
-    eps: Optional[float]
-    operating_margin: Optional[float]  # Added operating margin (%)
-
-    class Config:
-        from_attributes = True
-
-# Cash Flow Request
-class CashFlowRequest(BaseModel):
-    stock_symbol: str
-
-# Cash Flow Response
-class CashFlowResponse(BaseModel):
-    stock_symbol: str
-    quarter: str
-    operating_cash_flow: Optional[Decimal]
-    investing_cash_flow: Optional[Decimal]  # Added investing cash flow
-    financing_cash_flow: Optional[Decimal]  # Added financing cash flow
-    free_cash_flow: Optional[Decimal]  # Added free cash flow
-    capital_expenditures: Optional[Decimal]  # Added capital expenditures
-
-    class Config:
-        from_attributes = True
-
-# Dividend Request
-class DividendRequest(BaseModel):
-    stock_symbol: str
-
-# Dividend Response
-class DividendResponse(BaseModel):
-    stock_symbol: str
-    payment_date: str
-    amount: Optional[Decimal]
-
-    class Config:
-        from_attributes = True
-
-# Balance Sheet Request
-class BalanceSheetRequest(BaseModel):
-    stock_symbol: str
-
-# Balance Sheet Response
-class BalanceSheetResponse(BaseModel):
-    stock_symbol: str
-    quarter: str
-    total_assets: Optional[Decimal]
-    total_liabilities: Optional[Decimal]  # Added total liabilities
-    total_equity: Optional[Decimal]  # Added total equity
-    current_assets: Optional[Decimal]  # Added current assets
-    current_liabilities: Optional[Decimal]  # Added current liabilities
-
-    class Config:
-        from_attributes = True
-"""
-
-
+# Retrieve the income statement data for a given stock symbol
 # Endpoint to return all financial data for a given stock symbol
 @router.get("/financials/{symbol}", response_model=List[IncomeStatementResponse])
 def get_financial_data(symbol: str, db: Session = Depends(get_db)):
@@ -269,6 +295,35 @@ def get_cash_flow_data(symbol: str, db: Session = Depends(get_db)):
     return response
 
 
+# ENDPOINT FOR ADDING DATA TO DB
+@router.post("/add-income-statement")
+def add_income_statement_to_db(request: IncomeStatementRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    print("request.stock_symbol", request.stock_symbol)
+    stock_service.add_income_statement(request.stock_symbol)
+    
+    # return a success message
+    return {"message": "Income statement added successfully"}
+
+# ENDPOINT FOR ADDING BALANCE SHEET DATA TO DB
+@router.post("/add-balance-sheet")
+def add_balance_sheet_to_db(request: BalanceSheetRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    stock_service.add_balance_sheet(request.stock_symbol)
+    
+    # return a success message
+    return {"message": "Balance sheet added successfully"}
+
+# ENDPOINT FOR ADDING CASH FLOW DATA TO DB
+@router.post("/add-cash-flow")
+def add_cash_flow_to_db(request: CashFlowRequest, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    stock_service.add_cash_flow(request.stock_symbol)
+    
+    # return a success message
+    return {"message": "Cash flow added successfully"}
+
+
 # ENDPOINT FOR ADDING DIVIDEND DATA TO DB
 @router.post("/add-dividend")
 def add_dividend_to_db(request: DividendRequest, db: Session = Depends(get_db)):
@@ -278,54 +333,12 @@ def add_dividend_to_db(request: DividendRequest, db: Session = Depends(get_db)):
     # return a success message
     return {"message": "Dividend added successfully"}
 
-@router.post("/portfolios", response_model=PortfolioResponse)
-def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
-    service = StockService(db)
-    return service.create_portfolio(portfolio.user_id, portfolio.name)
 
-@router.get("/portfolios/{portfolio_id}", response_model=PortfolioResponse)
-def get_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
+# ENDPOINT FOR SEARCHING STOCKS
+@router.get("/search/{query}", response_model=List[StockResponse])
+def search_stocks(query, db: Session = Depends(get_db)):
     service = StockService(db)
-    portfolio = service.get_portfolio(portfolio_id)
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    return portfolio
-
-@router.get("/portfolios/user/{user_id}", response_model=List[PortfolioResponse])
-def get_user_portfolios(user_id: int, db: Session = Depends(get_db)):
-    service = StockService(db)
-    return service.get_user_portfolios(user_id)
-
-@router.post("/portfolios/{portfolio_id}/holdings", response_model=HoldingResponse)
-def add_holding(
-    portfolio_id: int,
-    holding: HoldingCreate,
-    db: Session = Depends(get_db)
-):
-    service = StockService(db)
-    portfolio = service.get_portfolio(portfolio_id)
-    if not portfolio:
-        raise HTTPException(status_code=404, detail="Portfolio not found")
-    stock = service.get_stock(holding.symbol)
-    if not stock:
-        raise HTTPException(status_code=404, detail="Stock not found")
-    return service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
-
-@router.put("/portfolios/holdings/{holding_id}", response_model=HoldingResponse)
-def update_holding(
-    holding_id: int,
-    holding: HoldingUpdate,
-    db: Session = Depends(get_db)
-):
-    service = StockService(db)
-    holding_obj = service.update_holding(holding_id, holding.quantity, Decimal(str(holding.price)))
-    if not holding_obj:
-        raise HTTPException(status_code=404, detail="Holding not found")
-    return holding_obj
-
-@router.delete("/portfolios/holdings/{holding_id}")
-def delete_holding(holding_id: int, db: Session = Depends(get_db)):
-    service = StockService(db)
-    if not service.delete_holding(holding_id):
-        raise HTTPException(status_code=404, detail="Holding not found")
-    return {"message": "Holding deleted successfully"}
+    stocks = service.search_stocks(query)
+    if not stocks:
+        raise HTTPException(status_code=404, detail="No stocks found")
+    return stocks
