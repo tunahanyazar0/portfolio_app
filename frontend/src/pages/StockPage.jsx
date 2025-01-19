@@ -7,9 +7,6 @@ import stockService from '../services/stockService';
 import BarChart from '../components/BarChart';
 import Sidebar from '../components/Sidebar';
 import { useRef } from 'react';
-// for the icons in the sidebar
-import { Menu as MenuIcon, ChevronLeft as ChevronLeftIcon } from '@mui/icons-material';
-
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -39,7 +36,7 @@ const StockPage = () => {
   const [freeCashFlowChartData, setFreeCashFlowChartData] = useState(null);
 
   // Sidebar related
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
   // Fields for navigation

@@ -1,24 +1,32 @@
 import React, { useState } from 'react';
 import {
-  Container, Box, Typography, TextField, Button, Paper, 
-  Link, ThemeProvider, Alert
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  Link,
+  ThemeProvider,
+  Alert,
+  CircularProgress,
 } from '@mui/material';
 import theme from '../theme/theme';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // Import useAuth
+import { useAuth } from '../context/AuthContext';
 import authService from '../services/authService';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Get login function from AuthContext
-  
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
-    username: '', // Add username field
+    username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
 
   const [error, setError] = useState('');
@@ -26,9 +34,9 @@ const RegisterPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -37,7 +45,6 @@ const RegisterPage = () => {
     setError('');
     setLoading(true);
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords don't match");
       setLoading(false);
@@ -45,27 +52,19 @@ const RegisterPage = () => {
     }
 
     try {
-      // Register the user
       const registerResponse = await authService.register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
-        lastName: formData.lastName
+        lastName: formData.lastName,
       });
 
-      // After successful registration, log them in automatically
-      const loginResponse = await authService.login(
-        formData.username,
-        formData.password
-      );
+      const loginResponse = await authService.login(formData.username, formData.password);
 
-      // Update global auth state
       login(loginResponse);
 
-      // Navigate to dashboard
       navigate('/dashboard');
-
     } catch (err) {
       setError(err.message || 'Failed to register');
     } finally {
@@ -76,14 +75,16 @@ const RegisterPage = () => {
   return (
     <ThemeProvider theme={theme}>
       <Container component="main" maxWidth="xs">
-        <Box sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}>
+        <Box
+          sx={{
+            marginTop: 8,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
           <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
-            <Typography component="h1" variant="h1" align="center" gutterBottom>
+            <Typography component="h1" variant="h4" align="center" gutterBottom>
               Register
             </Typography>
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
@@ -96,20 +97,73 @@ const RegisterPage = () => {
                 margin="normal"
                 required
                 fullWidth
+                id="firstName"
+                label="First Name"
+                name="firstName"
+                value={formData.firstName}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="lastName"
+                label="Last Name"
+                name="lastName"
+                value={formData.lastName}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="email"
+                label="Email Address"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
                 id="username"
                 label="Username"
                 name="username"
-                autoComplete="username"
                 value={formData.username}
                 onChange={handleChange}
               />
-              {/* ... other TextField components remain the same ... */}
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="password"
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+              />
+              <TextField
+                margin="normal"
+                required
+                fullWidth
+                id="confirmPassword"
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+              />
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
+                color="primary"
                 sx={{ mt: 3, mb: 2 }}
                 disabled={loading}
+                startIcon={loading && <CircularProgress size={20} />}
               >
                 {loading ? 'Registering...' : 'Register'}
               </Button>
