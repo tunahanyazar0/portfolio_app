@@ -2,16 +2,8 @@ import axios from 'axios';
 
 const API_BASE_URL = 'http://127.0.0.1:8001/api/stocks';
 
-const stockService = {
-  createStock: async (stock) => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/`, stock);
-      return response.data;
-    } catch (error) {
-      throw error.response.data;
-    }
-  },
 
+const stockService = {
   getStock: async (symbol) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/${symbol}`);
@@ -21,127 +13,71 @@ const stockService = {
     }
   },
 
-  getAllStocks: async () => {
+  createStock: async (stock) => {
     try {
-      const response = await axios.get(API_BASE_URL);
+      const response = await axios.post(`${API_BASE_URL}/`, stock);
       return response.data;
     } catch (error) {
       throw error.response.data;
     }
   },
 
-  // stock price related services
-
-  addStockPrices: async (stockPriceInput) => {
+  // Updated service to fetch stock general info using the /info endpoint
+  getStockInfo: async (symbol) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/${stockPriceInput.stock_symbol}/add-price`, stockPriceInput);
+      const response = await axios.get(`${API_BASE_URL}/${symbol}/info`);
       return response.data;
     } catch (error) {
       throw error.response.data;
     }
   },
 
-  getStockPrice: async (request) => {
+  // to fetch the current stock price
+  getStockPrice: async (symbol) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/price`, request);
+      const response = await axios.get(`${API_BASE_URL}/${symbol}/price`);
       return response.data;
     } catch (error) {
       throw error.response.data;
     }
   },
 
-  getStockPriceInDateRange: async (request) => {    
+  // to fetch the stock price in a date range 
+  getStockPriceInDateRange: async (request) => {
     try {
-        const response = await axios.post(`${API_BASE_URL}/prices`, request);
-        return response.data;
-    } catch (error) {
-        throw error.response.data;
-    }
-    },
-
-    // balance sheet, income statement, and cash flow statement services
-    getFinancialData: async (symbol) => {
-        try {
-          const response = await axios.get(`${API_BASE_URL}/financials/${symbol}`);
-          return response.data;
-        } catch (error) {
-          throw error.response.data;
-        }
-      },
-    
-      getBalanceSheetData: async (symbol) => {
-        try {
-          const response = await axios.get(`${API_BASE_URL}/balance-sheet/${symbol}`);
-          return response.data;
-        } catch (error) {
-          throw error.response.data;
-        }
-      },
-    
-      getCashFlowData: async (symbol) => {
-        try {
-          const response = await axios.get(`${API_BASE_URL}/cash-flow/${symbol}`);
-          return response.data;
-        } catch (error) {
-          throw error.response.data;
-        }
-      },
-
-    // Portfolio service
-
-  createPortfolio: async (portfolio) => {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/portfolios`, portfolio);
+      const response = await axios.post(`${API_BASE_URL}/prices-range`, request);
       return response.data;
     } catch (error) {
       throw error.response.data;
     }
   },
 
-  getPortfolio: async (portfolioId) => {
+  getFinancialData: async (symbol) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/portfolios/${portfolioId}`);
+      const response = await axios.get(`${API_BASE_URL}/financials/${symbol}`);
       return response.data;
     } catch (error) {
       throw error.response.data;
     }
   },
 
-  getUserPortfolios: async (userId) => {
+  getBalanceSheetData: async (symbol) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/portfolios/user/${userId}`);
+      const response = await axios.get(`${API_BASE_URL}/balance-sheet/${symbol}`);
       return response.data;
     } catch (error) {
       throw error.response.data;
     }
   },
 
-  addHolding: async (portfolioId, holding) => {
+  getCashFlowData: async (symbol) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/portfolios/${portfolioId}/holdings`, holding);
+      const response = await axios.get(`${API_BASE_URL}/cash-flow/${symbol}`);
       return response.data;
     } catch (error) {
       throw error.response.data;
     }
   },
-
-  updateHolding: async (holdingId, holding) => {
-    try {
-      const response = await axios.put(`${API_BASE_URL}/portfolios/holdings/${holdingId}`, holding);
-      return response.data;
-    } catch (error) {
-      throw error.response.data;
-    }
-  },
-
-  deleteHolding: async (holdingId) => {
-    try {
-      const response = await axios.delete(`${API_BASE_URL}/portfolios/holdings/${holdingId}`);
-      return response.data;
-    } catch (error) {
-      throw error.response.data;
-    }
-  }
 };
 
 export default stockService;

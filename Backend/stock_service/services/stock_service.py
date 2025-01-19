@@ -13,8 +13,7 @@ class StockService:
     def __init__(self, db: Session):
         self.db = db
 
-    # services related to stock info
-
+    # services related to stock information
     def create_stock(self, symbol: str, name: str, sector: str, market_cap: Decimal) -> Stock:
         # First get or create sector
         sector_obj = self.db.query(Sector).filter(Sector.name == sector).first()
@@ -45,17 +44,28 @@ class StockService:
         self.db.commit()
         self.db.refresh(stock)
         return stock
+    
+    # function to get detailed info about a stock using yahoo finance
+    def get_stock_info(self, symbol: str) -> dict:
+        #check if the stock exists in the db
+        stock = self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
 
+        stock_symbol = symbol.upper()
+        # add .IS to the end of the stock symbol since yahoo finance excepts that
+        stock_symbol += ".IS"
+
+        stock = yf.Ticker(stock_symbol)
+        info = stock.info
+        return info
+
+    # function to get basic info about a stock
     def get_stock(self, symbol: str) -> Optional[Stock]:
         return self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
     
-
-    # services related to stock prices
-
     def get_all_stocks(self) -> List[Stock]:
         return self.db.query(Stock).all()
-
     
+    # services related to stock prices
     def add_stock_price(self, stock_symbol: str, start_date: str, end_date: str):
         try:    
             # first check stock is in stocks db
@@ -122,7 +132,8 @@ class StockService:
         except Exception as e:
             self.db.rollback()  # Rollback in case of an error
             print(f"An error occurred while adding stock prices: {e}")
-    
+
+    # following to adds to db and extract from db
     def get_stock_price_on_date(self, stock_symbol: str, date: str) -> Optional[Decimal]:
         """Retrieve the stock price for a given stock symbol on a specific date."""
         stock_price = self.db.query(StockPrice).filter(
@@ -142,6 +153,46 @@ class StockService:
             StockPrice.date <= end_date
         ).all()
     
+    # Function to get the current stock price for a given stock symbol using yahoo finance, no db interaction
+    def get_current_stock_price(self, stock_symbol: str) -> StockPrice:
+        """
+            Using the yahoo finance api, get the current stock price for the given stock symbol
+        """
+        try:
+            stock_symbol = stock_symbol.upper()
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+            stock = yf.Ticker(stock_symbol)
+            info = stock.info
+            current_price = info.get("currentPrice", None)
+            return current_price
+        except Exception as e:
+            print(f"An error occurred while fetching stock price: {e}")
+
+    # Function to get close price of a stock for a given date range using yahoo finance
+    def get_stock_price_in_range(self, stock_symbol: str, start_date: str, end_date: str) -> List[StockPrice]:
+        """
+        Retrieve the stock prices for a given stock symbol and date range using Yahoo Finance.
+        """
+        try:
+            stock_symbol = stock_symbol.upper()
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+            stock = yf.Ticker(stock_symbol)
+            stock_data = stock.history(start=start_date, end=end_date)
+            stock_prices = []
+            for date, row in stock_data.iterrows():
+                close_price = Decimal(row['Close'])
+                stock_price = StockPrice(
+                    stock_symbol=stock_symbol[:-3],  # remove .IS from the end
+                    date=date.date(),
+                    close_price=close_price
+                )
+                stock_prices.append(stock_price)
+            return stock_prices
+        except Exception as e:
+            print(f"An error occurred while fetching stock prices: {e}")
+        
 
     # services related to income, balance sheet, cash flow and dividend data
     def add_income_statement(self, stock_symbol: str):
@@ -388,3 +439,4 @@ class StockService:
             self.db.commit()
             return True
         return False
+    

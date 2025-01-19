@@ -1,18 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Box, CircularProgress, Grid, Paper } from '@mui/material';
+import { Container, Typography, Box, CircularProgress, Grid, Paper, ListItemText, ListItem, List, IconButton, Drawer } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { useParams } from 'react-router-dom';
 import stockService from '../services/stockService';
 import BarChart from '../components/BarChart';
+import Sidebar from '../components/Sidebar';
+import { useRef } from 'react';
+// for the icons in the sidebar
+import { Menu as MenuIcon, ChevronLeft as ChevronLeftIcon } from '@mui/icons-material';
+
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
 const StockPage = () => {
   const { symbol } = useParams(); // Get the stock symbol from the URL
-  const [stock, setStock] = useState(null);
-  const [price, setPrice] = useState(null);
-  const [chartData, setChartData] = useState(null);
+  const [stock, setStock] = useState(null); // to store the basic info of the stock
+  const [stockInfo, setStockInfo] = useState(null); // to store the general info of the stock
+  const [price, setPrice] = useState(null); // to store the most recent stock price 
+  const [chartData, setChartData] = useState(null); // to store the stock price data for the chart
   const [loading, setLoading] = useState(true);
 
   // income statement related 
@@ -32,38 +38,92 @@ const StockPage = () => {
   // cash flow statement related
   const [freeCashFlowChartData, setFreeCashFlowChartData] = useState(null);
 
+  // Sidebar related
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  // Fields for navigation
+  const fields = [
+    { id: 'price-info', label: 'Price Info' },
+    { id: 'general-info', label: 'General Info' },
+    { id: 'ratios', label: 'Ratios' },
+    { id: 'price', label: 'Price Details' },
+    { id: 'debt-ratios', label: 'Debt Ratios' },
+    { id: 'charts', label: 'Financial Charts' },
+    { id: 'balance-sheet', label: 'Balance Sheet' },
+    { id: 'cash-flow', label: 'Cash Flow' },
+  ];
+
+  // Refs for navigation
+  const priceInfoRef = useRef(null);
+  const generalInfoRef = useRef(null);
+  const ratiosRef = useRef(null);
+  const priceRef = useRef(null);
+  const debtRatiosRef = useRef(null);
+  const chartsRef = useRef(null);
+  const balanceSheetRef = useRef(null);
+  const cashFlowRef = useRef(null);
+
+  const refs = {
+    'price-info': priceInfoRef,
+    'general-info': generalInfoRef,
+    'ratios': ratiosRef,
+    'price': priceRef,
+    'debt-ratios': debtRatiosRef,
+    'charts': chartsRef,
+    'balance-sheet': balanceSheetRef,
+    'cash-flow': cashFlowRef,
+  };
+
+  const handleNavigate = (id) => {
+    const targetRef = refs[id];
+    if (targetRef && targetRef.current) {
+      targetRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+
   useEffect(() => {
     const fetchStockData = async () => {
       try {
-        // Fetch stock information
-        const stockInfo = await stockService.getStock(symbol);
+        // get the stock from the db
+        const stock = await stockService.getStock(symbol);
         /*
         example output:
         {"stock_symbol":"AGHOL","name":"Anadolu Grubu Holding","sector_id":1,"market_cap":73000000000.0,"last_updated":"2025-01-15T10:52:07"}
         */
         
         // if stock is not in the database, set the stock to null and return the jsx below
-        if (!stockInfo) {
+        if (!stock) {
             setStock(null);
             setLoading(false);
             return;
           }
 
-        setStock(stockInfo);
+        setStock(stock);
 
-        // Log stock information for debugging
-        console.log('Stock Info:', stockInfo);
+        // Fetch stock general info
+        const stockInfo = await stockService.getStockInfo(symbol);
+        if(!stockInfo) {
+          setStock(null);
+          setLoading(false);
+          return;
+        }
+        setStockInfo(stockInfo);
 
-        // Fetch stock price data in the specified date range
+        // Fetch the most recent stock price
+        const priceData = await stockService.getStockPrice(symbol);
+        setPrice(priceData.close_price);
+
+        // Fetch price data for the chart
         const priceResponse = await stockService.getStockPriceInDateRange({
-          stock_symbol: stockInfo.stock_symbol,
-          start_date: '2024-06-03',
+          stock_symbol: symbol,
+          start_date: '2024-01-14',
           end_date: '2025-01-14',
         });
 
-        // Find the most recent close price
-        const recentPrice = priceResponse.reverse().find(price => price.close_price !== null);
-        setPrice(recentPrice ? recentPrice.close_price : 'N/A');
+        // we need to reverse the data to make the recent one to the right
+        priceResponse.reverse();
 
         // Prepare chart data
         const labels = priceResponse.map(price => price.date);
@@ -92,7 +152,7 @@ const StockPage = () => {
           labels,
           datasets: [
             {
-              label: `${stockInfo.name} Stock Price`,
+              label: `${stock.name} Stock Price`,
               data,
               borderColor: 'rgba(75, 192, 192, 1)',
               backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -103,7 +163,7 @@ const StockPage = () => {
         });
 
         // Fetch financial data for the stock
-        const financialData = await stockService.getFinancialData(stockInfo.stock_symbol);
+        const financialData = await stockService.getFinancialData(stock.stock_symbol);
 
         // Prepare income statement chart data
         const financialLabels = financialData.map(financial => financial.quarter);
@@ -169,7 +229,7 @@ const StockPage = () => {
         });
 
         // Fetch balance sheet data for the stock
-        const balanceSheetData = await stockService.getBalanceSheetData(stockInfo.stock_symbol);
+        const balanceSheetData = await stockService.getBalanceSheetData(stock.stock_symbol);
 
         // Prepare balance sheet chart data
         const balanceSheetLabels = balanceSheetData.map(balanceSheet => balanceSheet.quarter);
@@ -235,7 +295,7 @@ const StockPage = () => {
         });
 
         // Fetch cash flow data for the stock
-        const cashFlowData = await stockService.getCashFlowData(stockInfo.stock_symbol);
+        const cashFlowData = await stockService.getCashFlowData(stock.stock_symbol);
 
         // Prepare cash flow chart data
         const cashFlowLabels = cashFlowData.map(cashFlow => cashFlow.quarter);
@@ -329,16 +389,116 @@ const StockPage = () => {
     );
   }
 
+
   // else, render the stock page
   return (
     <Container>
-      <Box sx={{ my: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
-          {stock.name} ({stock.stock_symbol}) - ${price}
+      {/* Sidebar Component */}
+      <Sidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        fields={fields}
+        onNavigate={handleNavigate}
+      />
+
+      {/* Stock Price Section */}
+      <Box ref={priceInfoRef} sx={{ my: 4 }}>
+        <Paper elevation={3} sx={{ padding: 2, marginBottom: 4 }}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              {stock.name} ({stock.stock_symbol}) - {price} TL
+            </Typography>
+            <Box sx={{ height: 400 }}>
+              {chartData ? <Line options={chartOptions} data={chartData} /> : <Typography>No data available</Typography>}
+            </Box>
+          </Paper>
+      </Box>
+
+
+        {/* General Info Section */}
+        <Box ref={generalInfoRef} sx={{ my: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          General Information
         </Typography>
-        <Box sx={{ height: 400 }}>
-          {chartData ? <Line options={chartOptions} data={chartData} /> : <Typography>No data available</Typography>}
-        </Box>
+        <Grid container spacing={4} sx={{ mb: 4 }}>
+          <Grid item xs={12}>
+            <Paper elevation={3} sx={{ p: 2 }}>
+              <Typography variant="body1"><strong>Sector:</strong> {stockInfo.sector}</Typography>
+              <Typography variant="body1"><strong>Employees:</strong> {stockInfo.fullTimeEmployees}</Typography>
+              <Typography variant="body1"><strong>Description:</strong> {stockInfo.longBusinessSummary}</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+
+
+        {/* Ratios Section */}
+        <Box ref={ratiosRef} sx={{ my: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Ratios
+        </Typography>
+        <Grid container spacing={4} sx={{ mb: 4 }}>
+          <Grid item xs={12}>
+            <Paper elevation={3} sx={{ p: 2 }}>
+              <Typography variant="body1"><strong>Beta:</strong> {stockInfo.beta}</Typography>
+              <Typography variant="body1"><strong>Trailing PE:</strong> {stockInfo.trailingPE}</Typography>
+              <Typography variant="body1"><strong>Forward PE:</strong> {stockInfo.forwardPE}</Typography>
+              <Typography variant="body1"><strong>Price to Sales:</strong> {stockInfo.priceToSalesTrailing12Months}</Typography>
+              <Typography variant="body1"><strong>Profit Margins:</strong> {stockInfo.profitMargins}</Typography>
+              <Typography variant="body1"><strong>Book Value:</strong> {stockInfo.bookValue}</Typography>
+              <Typography variant="body1"><strong>Price to Book:</strong> {stockInfo.priceToBook}</Typography>
+              <Typography variant="body1"><strong>Trailing EPS:</strong> {stockInfo.trailingEps}</Typography>
+              <Typography variant="body1"><strong>Forward EPS:</strong> {stockInfo.forwardEps}</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+
+        {/* Price Section */}
+        <Box ref={priceRef} sx={{ my: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Price Details
+        </Typography>
+        <Grid container spacing={4} sx={{ mb: 4 }}>
+          <Grid item xs={12}>
+            <Paper elevation={3} sx={{ p: 2 }}>
+              <Typography variant="body1"><strong>Previous Close:</strong> {stockInfo.regularMarketPreviousClose}</Typography>
+              <Typography variant="body1"><strong>52 Week Low:</strong> {stockInfo.fiftyTwoWeekLow}</Typography>
+              <Typography variant="body1"><strong>52 Week High:</strong> {stockInfo.fiftyTwoWeekHigh}</Typography>
+              <Typography variant="body1"><strong>50 Day Avg:</strong> {stockInfo.fiftyDayAverage}</Typography>
+              <Typography variant="body1"><strong>200 Day Avg:</strong> {stockInfo.twoHundredDayAverage}</Typography>
+              <Typography variant="body1"><strong>52 Week Change:</strong> {stockInfo['52WeekChange']}</Typography>
+              <Typography variant="body1"><strong>Target High:</strong> {stockInfo.targetHighPrice}</Typography>
+              <Typography variant="body1"><strong>Target Low:</strong> {stockInfo.targetLowPrice}</Typography>
+              <Typography variant="body1"><strong>Mean Target:</strong> {stockInfo.targetMeanPrice}</Typography>
+              <Typography variant="body1"><strong>Recommendation:</strong> {stockInfo.recommendationKey}</Typography>
+              <Typography variant="body1"><strong>Analyst Opinions:</strong> {stockInfo.numberOfAnalystOpinions}</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+
+        {/* Debt Ratios Section */}
+        <Box ref={debtRatiosRef} sx={{ my: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Debt Ratios
+        </Typography>
+        <Grid container spacing={4} sx={{ mb: 4 }}>
+          <Grid item xs={12}>
+            <Paper elevation={3} sx={{ p: 2  }}>
+              <Typography variant="body1"><strong>Total Debt:</strong> {stockInfo.totalDebt}</Typography>
+              <Typography variant="body1"><strong>Quick Ratio:</strong> {stockInfo.quickRatio}</Typography>
+              <Typography variant="body1"><strong>Current Ratio:</strong> {stockInfo.currentRatio}</Typography>
+              <Typography variant="body1"><strong>Debt to Equity:</strong> {stockInfo.debtToEquity}</Typography>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Box>
+
+        {/* Financial Charts Section */}
+        <Box ref={chartsRef} sx={{ my: 4 }}>
+        <Typography variant="h5" gutterBottom>
+            Financial Charts
+          </Typography>
         <Grid container spacing={4}>
           {revenueChartData && (
             <Grid item xs={12} md={6}>
@@ -375,6 +535,16 @@ const StockPage = () => {
                 </Paper>
                 </Grid>
             )}
+        </Grid>
+      </Box>
+
+
+      <Box ref={balanceSheetRef} sx={{ my: 4 }}>
+      <Typography variant="h5" gutterBottom>
+          Balance Sheet Charts  
+          </Typography>
+        <Grid container spacing={4}>
+            {/* Balance Sheet Section */}
             {totalAssetsChartData && (
                 <Grid item xs={12} md={6}>
                 <Paper elevation={3} sx={{ padding: 2 }}>
@@ -410,6 +580,16 @@ const StockPage = () => {
                 </Paper>
                 </Grid>
             )}
+        </Grid>
+      </Box>
+
+            
+            {/* Cash Flow Section */}
+        <Box ref={cashFlowRef} sx={{ my: 4 }}>
+          <Typography variant="h5" gutterBottom>
+            Cash Flow Charts
+          </Typography>
+        <Grid container spacing={4}>
             {freeCashFlowChartData && (
                 <Grid item xs={12} md={6}>
                 <Paper elevation={3} sx={{ padding: 2 }}>
