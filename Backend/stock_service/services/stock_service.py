@@ -52,6 +52,11 @@ class StockService:
         self.db.add(stock)
         self.db.commit()
         self.db.refresh(stock)
+
+        # after the creation of a stock, we need to extract the financials and add them to the db
+        self.add_income_statement(stock.stock_symbol)
+        self.add_balance_sheet(stock.stock_symbol)
+        self.add_cash_flow(stock.stock_symbol)
         return stock
 
     # Create stock manually without using yahoo finance
@@ -103,8 +108,27 @@ class StockService:
     def get_stock(self, symbol: str) -> Optional[Stock]:
         return self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
     
+    # it returns all stocks in the db in a basic manner, 3 field
     def get_all_stocks(self) -> List[Stock]:
         return self.db.query(Stock).all()
+    
+    def get_all_stocks_in_detail(self):
+        """
+            Retrieve the stock symbols and names of all stocks in the database.
+            Then using yahoo finance, fetch detailed information about each stock.
+        """
+        stocks = self.db.query(Stock).all()
+        stock_info = []
+        for stock in stocks:
+            stock_symbol = stock.stock_symbol
+            stock_symbol += ".IS"
+            stock = yf.Ticker(stock_symbol)
+            info = stock.info
+
+            info["stock_symbol"] = stock_symbol[:-3]  # remove .IS from the end
+            stock_info.append(info)
+        return stock_info
+
     
     # search for stocks by symbol or name
     def search_stocks(self, query: str) -> List[Stock]:
@@ -119,6 +143,22 @@ class StockService:
             return results[:5]
 
         return results
+    
+    # function to get all stocks in a sector
+    def get_stocks_in_sector(self, sector: str) -> List[Stock]:
+        sector_obj = self.db.query(Sector).filter(Sector.name == sector).first()
+        if sector_obj == None:
+            raise ValueError(f"No sector with name {sector} exists")
+        if sector_obj:
+            return self.db.query(Stock).filter(Stock.sector_id == sector_obj.sector_id).all()
+        return []
+    
+    # function to get all sectors
+    def get_all_sectors(self) -> List[Sector]:
+        result = self.db.query(Sector).all()
+        print(result)
+        return result
+    
 
     # services related to stock prices
     def add_stock_price(self, stock_symbol: str, start_date: str, end_date: str):

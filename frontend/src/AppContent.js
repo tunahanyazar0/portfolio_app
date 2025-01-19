@@ -12,12 +12,21 @@ import RegisterPage from './pages/registerPage';
 import Dashboard from './pages/dashboard';
 import NotFound from './pages/NotFound';
 import StockPage from './pages/StockPage';
+import StocksPage from './pages/StocksPage';
+
+// navbars are seen in all of the pages if the user is authenticated
+// if the user is not authenticated, the user is redirected to the login page
+import BottomNavbar from './components/BottomNavbar';
+import Navbar from './components/Navbar';
 
 function AppContent() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline /> {/* Resets browser styling */}
       <AuthProvider>
+        <Navbar />
+        <BottomNavbar />
+
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Routes>
             {/* Public Routes */}
@@ -38,6 +47,15 @@ function AppContent() {
               element={
                 <PrivateRoute>
                   <StockPage />
+                </PrivateRoute>
+              } 
+            />
+
+            <Route 
+              path="/stocks" 
+              element={
+                <PrivateRoute>
+                  <StocksPage />
                 </PrivateRoute>
               } 
             />

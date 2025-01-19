@@ -87,6 +87,17 @@ const stockService = {
       throw error.response.data;
     }
   },
+
+  // requested url: http://localhost:8001/api/stocks/stocks-all/{symbol}
+  getAllStocksDetailed: async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/stocks-all/x`);
+      return response.data;
+    } catch (error) {
+      throw error.response.data;
+    }
+  }
+
 };
 
 export default stockService;

@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-//const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+import { jwtDecode } from 'jwt-decode';
 
 const Authentication_backend_url = 'http://localhost:8000';
 
@@ -22,23 +21,7 @@ const authService = {
       Bu tokenden username ve role bilgisine ulaşmak için token i decode etmeliyiz çünkü 
       bu bilgiler token içine gömülü:
 
-      Here is how to decode it:
-      import jwtDecode from 'jwt-decode';
-
-      // Assuming you have the token stored in localStorage
-      const user = JSON.parse(localStorage.getItem('user'));
-      if (user && user.token) {
-          const decodedToken = jwtDecode(user.token);
-          
-          // Access username and role
-          const username = decodedToken.sub; // Assuming 'sub' contains the username
-          const role = decodedToken.role; // Assuming 'role' is also in the token
-
-          console.log('Username:', username);
-          console.log('Role:', role);
-      } else {
-          console.log('User is not logged in');
-      }
+      decode edip içeriden sub keyword ünden username i alma işlemi aşağıda var.
       */
 
       return response.data;
@@ -67,6 +50,23 @@ const authService = {
     try {
       const user = localStorage.getItem('user');
       return user ? JSON.parse(user) : null;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
+  },
+
+  // this function is used to get username from token in local storage under the sub keyword
+  getUsernameFromToken: () => {
+    try {
+      const user = localStorage.getItem('user');
+      console.log(user);
+      if (user) {
+        const parsedUser = JSON.parse(user); // Parse the JSON string to object
+        const decodedToken = jwtDecode(parsedUser.access_token); // Use the parsed access_token
+        return decodedToken.sub; // Return the `sub` property from the token
+      }
+      return null;
     } catch (error) {
       console.error('Error parsing user data:', error);
       return null;

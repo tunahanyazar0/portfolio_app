@@ -304,3 +304,24 @@ def search_stocks(query, db: Session = Depends(get_db)):
     if not stocks:
         raise HTTPException(status_code=404, detail="No stocks found")
     return stocks
+
+# ENDPOINTS RELATED TO SECTOR ANALYSIS
+# symbol u koymazsak çalışmıyor çünkü doğru endpointi seçemiyor
+@router.get("/sectors-all/{symbol}", response_model=List[SectorResponse])
+def get_sectors(db: Session = Depends(get_db)):
+    service = StockService(db)
+    return service.get_all_sectors()
+
+@router.get("/sectors/{sector}")
+def get_stocks_in_sector(sector: str, db: Session = Depends(get_db)):
+    service = StockService(db)
+    stocks = service.get_stocks_in_sector(sector)
+    if not stocks:
+        raise HTTPException(status_code=404, detail="No stocks found in this sector")
+    return stocks
+
+# GET ALL THE STOCKS IN THE DB -> DETAİLED İNFO USING YAHOO FİNANCE
+@router.get("/stocks-all/{symbol}")
+def get_all_stocks(db: Session = Depends(get_db)):
+    service = StockService(db)
+    return service.get_all_stocks_in_detail()
