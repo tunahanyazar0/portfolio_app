@@ -27,7 +27,7 @@ const BottomNavbar = () => {
         navigate('/stocks'); // Stocks page
         break;
       case 3:
-        navigate('/portfolio'); // Portfolio page
+        navigate('/portfolios'); // Portfolio page
         break;
       case 4:
         navigate('/profile'); // Profile page

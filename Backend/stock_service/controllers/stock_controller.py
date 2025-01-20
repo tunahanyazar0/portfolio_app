@@ -18,11 +18,15 @@ router = APIRouter(
 # ARTIK STOCK PRİCE HAKKINDA DB  ISLEMI YAPMICAZ, DB YE EKLEMEK VE ORDAN CEKMEK YERİNE YAHOO FİNANCE DEN CEKİCEZ
 
 # ENDPOİNTS RELATED TO PORTFOLIOS
+
+# Create a new portfolio for a user but no holding inside for now
 @router.post("/portfolios", response_model=PortfolioResponse)
 def create_portfolio(portfolio: PortfolioCreate, db: Session = Depends(get_db)):
     service = StockService(db)
     return service.create_portfolio(portfolio.user_id, portfolio.name)
 
+
+# to return a portfolio with the given id but basic info not holdings inside
 @router.get("/portfolios/{portfolio_id}", response_model=PortfolioResponse)
 def get_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
     service = StockService(db)
@@ -31,12 +35,23 @@ def get_portfolio(portfolio_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Portfolio not found")
     return portfolio
 
+# to return all portfolios of a user
 @router.get("/portfolios/user/{user_id}", response_model=List[PortfolioResponse])
 def get_user_portfolios(user_id: int, db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_user_portfolios(user_id)
 
-@router.post("/portfolios/{portfolio_id}/holdings", response_model=HoldingResponse)
+# to return holdings in a portfolio : get_portfolio_holdings
+@router.get("/portfolios/{portfolio_id}/holdings", response_model=List[HoldingResponse])
+def get_portfolio_holdings(portfolio_id: int, db: Session = Depends(get_db)):
+    service = StockService(db)
+    holdings = service.get_portfolio_holdings(portfolio_id)
+    if not holdings:
+        raise HTTPException(status_code=404, detail="No holdings found in this portfolio")
+    return holdings
+
+# to add a holding to a portfolio with the given id
+@router.post("/portfolios/{portfolio_id}/add/holdings", response_model=HoldingResponse)
 def add_holding(
     portfolio_id: int,
     holding: HoldingCreate,
@@ -51,7 +66,8 @@ def add_holding(
         raise HTTPException(status_code=404, detail="Stock not found")
     return service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
 
-@router.put("/portfolios/holdings/{holding_id}", response_model=HoldingResponse)
+# to update a holding in a portfolio
+@router.put("/portfolios/holdings/update/{holding_id}", response_model=HoldingResponse)
 def update_holding(
     holding_id: int,
     holding: HoldingUpdate,
@@ -63,7 +79,8 @@ def update_holding(
         raise HTTPException(status_code=404, detail="Holding not found")
     return holding_obj
 
-@router.delete("/portfolios/holdings/{holding_id}")
+# to delete a holding in a portfolio with the given holding id
+@router.delete("/portfolios/holdings/delete/{holding_id}")
 def delete_holding(holding_id: int, db: Session = Depends(get_db)):
     service = StockService(db)
     if not service.delete_holding(holding_id):
@@ -74,8 +91,8 @@ def delete_holding(holding_id: int, db: Session = Depends(get_db)):
 # only admin or moderator can add stock to the system
 # it takes the stock symbol as input and returns the stock object as output if the stock is successfully added
 # uses yahoo finance for additional info
-@router.post("/", response_model=StockResponse) # , username: str = Depends(verify_role)
-async def create_stock(stock_symbol: str, db: Session = Depends(get_db)):
+@router.post("/", response_model=StockResponse)
+async def create_stock(stock_symbol: str, db: Session = Depends(get_db), username: str = Depends(verify_role)):
     service = StockService(db)
     existing_stock = service.get_stock(stock_symbol)
     if existing_stock:
@@ -325,3 +342,12 @@ def get_stocks_in_sector(sector: str, db: Session = Depends(get_db)):
 def get_all_stocks(db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_all_stocks_in_detail()
+
+# to return the sector of the given stock by symbol
+@router.get("/sector/{symbol}")
+def get_sector_of_stock(symbol: str, db: Session = Depends(get_db)):
+    service = StockService(db)
+    sector = service.get_sector_of_stock(symbol)
+    if not sector:
+        raise HTTPException(status_code=404, detail="Stock not found")
+    return sector

@@ -60,7 +60,6 @@ const authService = {
   getUsernameFromToken: () => {
     try {
       const user = localStorage.getItem('user');
-      console.log(user);
       if (user) {
         const parsedUser = JSON.parse(user); // Parse the JSON string to object
         const decodedToken = jwtDecode(parsedUser.access_token); // Use the parsed access_token
@@ -83,7 +82,7 @@ const authService = {
 
   getUserInformationByUsername: async (username) => {
     try {
-      const response = await axios.get(`${Authentication_backend_url}/users/${username}`);
+      const response = await axios.get(`${Authentication_backend_url}/auth/users/${username}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
