@@ -91,6 +91,11 @@ class StockService:
         self.db.refresh(stock)
         return stock
     
+    # function to get basic info about a stock from db
+    def get_stock(self, symbol: str) -> Optional[Stock]:
+        return self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
+
+    
     # function to get detailed info about a stock using yahoo finance
     def get_stock_info(self, symbol: str) -> dict:
         #check if the stock exists in the db
@@ -103,15 +108,20 @@ class StockService:
         stock = yf.Ticker(stock_symbol)
         info = stock.info
         return info
- 
-    # function to get basic info about a stock from db
-    def get_stock(self, symbol: str) -> Optional[Stock]:
-        return self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
     
+    def get_sector_of_stock(self, symbol: str) -> Optional[Sector]:
+        symbol = symbol.upper() # Ensure symbol is uppercase
+        stock = self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
+        if stock:
+            return self.db.query(Sector).filter(Sector.sector_id == stock.sector_id).first()
+        return None
+    
+
     # it returns all stocks in the db in a basic manner, 3 field
     def get_all_stocks(self) -> List[Stock]:
         return self.db.query(Stock).all()
     
+    # bu function returns all stocks in detail, using yahoo finance
     def get_all_stocks_in_detail(self):
         """
             Retrieve the stock symbols and names of all stocks in the database.
@@ -158,7 +168,7 @@ class StockService:
         result = self.db.query(Sector).all()
         print(result)
         return result
-    
+
 
     # services related to stock prices
     def add_stock_price(self, stock_symbol: str, start_date: str, end_date: str):
@@ -288,7 +298,7 @@ class StockService:
         except Exception as e:
             print(f"An error occurred while fetching stock prices: {e}")
         
-    # services related to income, balance sheet, cash flow and dividend data
+    # services related to income, balance sheet, cash flow and dividend data 
     def add_income_statement(self, stock_symbol: str):
         """
         Fetch and add quarterly income statement data for the given stock symbol.
@@ -486,7 +496,7 @@ class StockService:
         return self.db.query(CashFlow).filter(CashFlow.stock_symbol == stock_symbol).all()
 
 
-    # services related to portfolio management
+    # SERVICES RELATED TO PORTFOLIO MANAGEMENT      
     def create_portfolio(self, user_id: int, name: str) -> Portfolio:
         portfolio = Portfolio(
             user_id=user_id,
@@ -498,6 +508,27 @@ class StockService:
         return portfolio
 
     def add_holding(self, portfolio_id: int, symbol: str, quantity: int, price: Decimal) -> PortfolioHolding:
+        # no need to check if the stock exists since user can buy existing stocks in the frontend
+
+        # check if the stock exists in the portfolio
+        holding = self.db.query(PortfolioHolding).filter(
+            PortfolioHolding.portfolio_id == portfolio_id,
+            PortfolioHolding.stock_symbol == symbol
+        ).first()
+
+        if holding:
+            # we need to update the holding if it exists like quantity and the average bought price
+            new_weighted_avg_price = (holding.quantity * holding.average_price + quantity * price) / (holding.quantity + quantity)
+            new_quantity = holding.quantity + quantity
+
+            holding.quantity = new_quantity
+            holding.average_price = new_weighted_avg_price
+
+            self.db.commit()
+            self.db.refresh(holding)
+            return holding
+
+        # else: create a new holding record in the db
         holding = PortfolioHolding(
             portfolio_id=portfolio_id,
             stock_symbol=symbol,
@@ -509,12 +540,25 @@ class StockService:
         self.db.refresh(holding)
         return holding
 
+    # to return a portfolio by portfolio id but in this holdings are not included
     def get_portfolio(self, portfolio_id: int) -> Optional[Portfolio]:
         return self.db.query(Portfolio).filter(Portfolio.portfolio_id == portfolio_id).first()
 
+    # to return all portfolios of a specific user
     def get_user_portfolios(self, user_id: int) -> List[Portfolio]:
         return self.db.query(Portfolio).filter(Portfolio.user_id == user_id).all()
+    
+    # to return all holding of a portfolio
+    def get_portfolio_holdings(self, portfolio_id: int) -> List[PortfolioHolding]:
+        # check if the portfolio exists
+        portfolio = self.db.query(Portfolio).filter(Portfolio.portfolio_id == portfolio_id).first()
+        if portfolio is None:
+            raise ValueError(f"Portfolio with id {portfolio_id} does not exists")
 
+        # otherwise return all holdings of the portfolio
+        return self.db.query(PortfolioHolding).filter(PortfolioHolding.portfolio_id == portfolio_id).all()
+
+    # to update a holding in a portfolio by holding id
     def update_holding(self, holding_id: int, quantity: int, price: Decimal) -> Optional[PortfolioHolding]:
         holding = self.db.query(PortfolioHolding).filter(PortfolioHolding.holding_id == holding_id).first()
         if holding:
@@ -524,6 +568,7 @@ class StockService:
             self.db.refresh(holding)
         return holding
 
+    # to delete a holding in a portfolio by holding id -> user will need this when they sell a stock
     def delete_holding(self, holding_id: int) -> bool:
         holding = self.db.query(PortfolioHolding).filter(PortfolioHolding.holding_id == holding_id).first()
         if holding:
