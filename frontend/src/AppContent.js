@@ -13,6 +13,9 @@ import Dashboard from './pages/dashboard';
 import NotFound from './pages/NotFound';
 import StockPage from './pages/StockPage';
 import StocksPage from './pages/StocksPage';
+import ProfilePage from './pages/ProfilePage';
+import PortfoliosPage from './pages/PortfoliosPage';
+import PortfolioPage from './pages/PortfolioPage';
 
 // navbars are seen in all of the pages if the user is authenticated
 // if the user is not authenticated, the user is redirected to the login page
@@ -59,6 +62,34 @@ function AppContent() {
                 </PrivateRoute>
               } 
             />
+
+            <Route
+              path = "/profile"
+              element = {
+                <PrivateRoute>
+                  <ProfilePage />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path = "/portfolios"
+              element = {
+                <PrivateRoute>
+                  <PortfoliosPage />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/portfolios/:id"
+              element = {
+                <PrivateRoute>
+                  <PortfolioPage />
+                </PrivateRoute>
+              }
+            />
+
             
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
             <Route 
