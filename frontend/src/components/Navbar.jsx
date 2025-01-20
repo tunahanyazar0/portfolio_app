@@ -256,8 +256,8 @@ const Navbar = () => {
               <MenuItem onClick={() => navigate('/profile')}>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>Profile</Typography>
               </MenuItem>
-              <MenuItem onClick={() => navigate('/portfolio')}>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>Portfolio</Typography>
+              <MenuItem onClick={() => navigate('/portfolios')}>
+                <Typography variant="body1" sx={{ fontWeight: 500 }}>Portfolios</Typography>
               </MenuItem>
               <MenuItem
                 onClick={() => {
