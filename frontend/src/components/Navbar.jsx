@@ -66,19 +66,30 @@ const Navbar = () => {
     >
       <Toolbar sx={{ height: 70, px: { xs: 2, sm: 4 } }}>
         {/* Logo */}
-        <Typography href="/dashboard"
-          variant="h5"
+        <Button
+          onClick={() => navigate('/dashboard')}
           sx={{
-            fontWeight: 700,
-            letterSpacing: '0.5px',
-            background: 'linear-gradient(45deg, #ffffff 30%, #e3f2fd 90%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mr: { xs: 1, sm: 3 }
+            padding: 0,
+            background: 'transparent',
+            '&:hover': {
+              background: 'transparent',
+            },
           }}
         >
-          Z Investment
-        </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 700,
+              letterSpacing: '0.5px',
+              background: 'linear-gradient(45deg, #ffffff 30%, #e3f2fd 90%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              cursor: 'pointer',
+            }}
+          >
+            Z Investment
+          </Typography>
+        </Button>
 
         {/* Search Bar */}
         {user && (

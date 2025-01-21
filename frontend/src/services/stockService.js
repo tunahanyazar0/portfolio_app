@@ -165,7 +165,53 @@ const stockService = {
     } catch (error) {
       throw error.response.data;
     }
-  }
+  },
+
+  /*
+  // to fetch detailed sector information
+
+    here is an example request: http://localhost:8001/api/stocks/sector-info/1
+    here is an example response:
+    {
+      "sector": {
+        "name": "Conglomerates",
+        "sector_id": 1
+      },
+      "number_of_companies": 3,
+      "total_market_cap": 732000000000,
+      "top_3_companies": [
+        {
+          "stock_symbol": "KCHOL",
+          "market_cap": 450000000000,
+          "name": "Koc Holding",
+          "sector_id": 1,
+          "last_updated": "2025-01-19T13:44:09"
+        },
+        {
+          "stock_symbol": "SAHOL",
+          "market_cap": 209000000000,
+          "name": "Sabanci Holding",
+          "sector_id": 1,
+          "last_updated": "2025-01-19T15:30:37"
+        },
+        {
+          "stock_symbol": "AGHOL",
+          "market_cap": 73000000000,
+          "name": "Anadolu Grubu Holding",
+          "sector_id": 1,
+          "last_updated": "2025-01-15T10:52:07"
+        }
+      ]
+    }
+  */
+  getSectorInfo: async (sectorId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/sector-info/${sectorId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response.data;
+    }
+  },
 
 };
 

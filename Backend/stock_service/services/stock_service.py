@@ -155,22 +155,6 @@ class StockService:
             return results[:5]
 
         return results
-    
-    # function to get all stocks in a sector
-    def get_stocks_in_sector(self, sector: str) -> List[Stock]:
-        sector_obj = self.db.query(Sector).filter(Sector.name == sector).first()
-        if sector_obj == None:
-            raise ValueError(f"No sector with name {sector} exists")
-        if sector_obj:
-            return self.db.query(Stock).filter(Stock.sector_id == sector_obj.sector_id).all()
-        return []
-    
-    # function to get all sectors
-    def get_all_sectors(self) -> List[Sector]:
-        result = self.db.query(Sector).all()
-        print(result)
-        return result
-
 
     # services related to stock prices
     def add_stock_price(self, stock_symbol: str, start_date: str, end_date: str):
@@ -578,3 +562,40 @@ class StockService:
             return True
         return False
     
+
+    # services related to sectors
+    def get_sector_info(self, sector_id: int): 
+        sector = self.db.query(Sector).filter(Sector.sector_id == sector_id).first()
+        if not sector:
+            raise ValueError(f"No sector with id {sector_id} exists")
+        
+        # we will collect some info about the sector
+        number_of_companies_from_that_sector = self.db.query(Stock).filter(Stock.sector_id == sector_id).count()
+        
+        total_market_cap = self.db.query(Stock).filter(Stock.sector_id == sector_id).with_entities(Stock.market_cap).all()
+        total_market_cap = sum([float(x[0]) for x in total_market_cap])
+
+        # first three companies with the highest market cap
+        top_3_companies = self.db.query(Stock).filter(Stock.sector_id == sector_id).order_by(Stock.market_cap.desc()).limit(3).all()
+
+        return {
+            "sector": sector,
+            "number_of_companies": number_of_companies_from_that_sector,
+            "total_market_cap": total_market_cap,
+            "top_3_companies": top_3_companies
+        }        
+
+    # function to get all stocks in a sector
+    def get_stocks_in_sector(self, sector: str) -> List[Stock]:
+        sector_obj = self.db.query(Sector).filter(Sector.name == sector).first()
+        if sector_obj == None:
+            raise ValueError(f"No sector with name {sector} exists")
+        if sector_obj:
+            return self.db.query(Stock).filter(Stock.sector_id == sector_obj.sector_id).all()
+        return []
+    
+    # function to get all sectors
+    def get_all_sectors(self) -> List[Sector]:
+        result = self.db.query(Sector).all()
+        print(result)
+        return result
