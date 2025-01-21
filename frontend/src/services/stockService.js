@@ -98,6 +98,27 @@ const stockService = {
     }
   },
 
+  /*
+    example request url: http://localhost:8001/api/stocks/search/ag
+    example output:
+    [
+      {
+        "stock_symbol": "AGHOL",
+        "name": "Anadolu Grubu Holding",
+        "sector_id": 1,
+        "market_cap": 73000000000,
+        "last_updated": "2025-01-15T10:52:07"
+      },
+      {
+        "stock_symbol": "MPARK",
+        "name": "MLP Saglik Hizmetleri A.S.",
+        "sector_id": 4,
+        "market_cap": 75449737216,
+        "last_updated": "2025-01-19T15:42:55"
+      }
+    ]
+
+  */
   searchStocks: async (query) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/search/${query}`);

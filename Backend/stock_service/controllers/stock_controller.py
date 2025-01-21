@@ -67,14 +67,15 @@ def add_holding(
     return service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
 
 # to update a holding in a portfolio
-@router.put("/portfolios/holdings/update/{holding_id}", response_model=HoldingResponse)
-def update_holding(
+@router.put("/portfolios/holdings/decrease/{holding_id}", response_model=HoldingResponse)
+def decrease_holding(
     holding_id: int,
-    holding: HoldingUpdate,
+    holding: HoldingDecrease, # sadece quantity keyword u var
     db: Session = Depends(get_db)
 ):
     service = StockService(db)
-    holding_obj = service.update_holding(holding_id, holding.quantity, Decimal(str(holding.price)))
+    # holding.quantity is the quantity to decrease
+    holding_obj = service.decrease_holding(holding_id, holding.quantity)
     if not holding_obj:
         raise HTTPException(status_code=404, detail="Holding not found")
     return holding_obj

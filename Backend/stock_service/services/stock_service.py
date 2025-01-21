@@ -93,6 +93,8 @@ class StockService:
     
     # function to get basic info about a stock from db
     def get_stock(self, symbol: str) -> Optional[Stock]:
+        # make upper case
+        symbol = symbol.upper()
         return self.db.query(Stock).filter(Stock.stock_symbol == symbol).first()
 
     
@@ -558,12 +560,11 @@ class StockService:
         # otherwise return all holdings of the portfolio
         return self.db.query(PortfolioHolding).filter(PortfolioHolding.portfolio_id == portfolio_id).all()
 
-    # to update a holding in a portfolio by holding id
-    def update_holding(self, holding_id: int, quantity: int, price: Decimal) -> Optional[PortfolioHolding]:
+    # it allows us to decrease the quantity of a holding in a portfolio but not delete
+    def decrease_holding(self, holding_id: int, quantity: int) -> Optional[PortfolioHolding]:
         holding = self.db.query(PortfolioHolding).filter(PortfolioHolding.holding_id == holding_id).first()
         if holding:
-            holding.quantity = quantity
-            holding.average_price = price
+            holding.quantity -= quantity
             self.db.commit()
             self.db.refresh(holding)
         return holding

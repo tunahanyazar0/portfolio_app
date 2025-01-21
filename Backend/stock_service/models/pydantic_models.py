@@ -70,9 +70,8 @@ class HoldingResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class HoldingUpdate(BaseModel):
+class HoldingDecrease(BaseModel):
     quantity: int
-    price: float
 
 
 # income statement request
