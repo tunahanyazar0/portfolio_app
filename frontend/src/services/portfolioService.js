@@ -37,7 +37,15 @@ class PortfolioService {
     }
 
     // to add a holding to a portfolio with the given id
+    /*
+        example request url: http://localhost:8001/api/stocks/portfolios/1/add/holdings
+        example request body: {"symbol": "ORGE", quantity: 10, price: 120}
+    */
     async addHolding(portfolioId, symbol, quantity, price) {
+        // portfolio id must be integer, symbol must be string, quantity must be integer and price must be float
+        quantity = parseInt(quantity);
+        price = parseFloat(price);
+
         const response = await axios.post(`${this.apiURL}/portfolios/${portfolioId}/add/holdings`, {
             symbol,
             quantity,
@@ -46,11 +54,10 @@ class PortfolioService {
         return response.data;
     }
 
-    // to update a holding in a portfolio
-    async updateHolding(holdingId, quantity, price) {
-        const response = await axios.put(`${this.apiURL}/portfolios/holdings/update/${holdingId}`, {
-            quantity,
-            price
+    // to decrease the quantity of a holding in a portfolio with the given holding id, but not delete
+    async decreaseHolding(holdingId, quantity) {
+        const response = await axios.put(`${this.apiURL}/portfolios/holdings/decrease/${holdingId}`, {
+            quantity
         });
         return response.data;
     }

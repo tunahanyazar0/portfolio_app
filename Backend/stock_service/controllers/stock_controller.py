@@ -67,14 +67,15 @@ def add_holding(
     return service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
 
 # to update a holding in a portfolio
-@router.put("/portfolios/holdings/update/{holding_id}", response_model=HoldingResponse)
-def update_holding(
+@router.put("/portfolios/holdings/decrease/{holding_id}", response_model=HoldingResponse)
+def decrease_holding(
     holding_id: int,
-    holding: HoldingUpdate,
+    holding: HoldingDecrease, # sadece quantity keyword u var
     db: Session = Depends(get_db)
 ):
     service = StockService(db)
-    holding_obj = service.update_holding(holding_id, holding.quantity, Decimal(str(holding.price)))
+    # holding.quantity is the quantity to decrease
+    holding_obj = service.decrease_holding(holding_id, holding.quantity)
     if not holding_obj:
         raise HTTPException(status_code=404, detail="Holding not found")
     return holding_obj
@@ -336,6 +337,52 @@ def get_stocks_in_sector(sector: str, db: Session = Depends(get_db)):
     if not stocks:
         raise HTTPException(status_code=404, detail="No stocks found in this sector")
     return stocks
+
+
+"""
+    here is an example request: http://localhost:8001/api/stocks/sector-info/1
+    here is an example response:
+    {
+        "sector": {
+            "name": "Conglomerates",
+            "sector_id": 1
+        },
+        "number_of_companies": 3,
+        "total_market_cap": 732000000000,
+        "top_3_companies": [
+            {
+            "stock_symbol": "KCHOL",
+            "market_cap": 450000000000,
+            "name": "Koc Holding",
+            "sector_id": 1,
+            "last_updated": "2025-01-19T13:44:09"
+            },
+            {
+            "stock_symbol": "SAHOL",
+            "market_cap": 209000000000,
+            "name": "Sabanci Holding",
+            "sector_id": 1,
+            "last_updated": "2025-01-19T15:30:37"
+            },
+            {
+            "stock_symbol": "AGHOL",
+            "market_cap": 73000000000,
+            "name": "Anadolu Grubu Holding",
+            "sector_id": 1,
+            "last_updated": "2025-01-15T10:52:07"
+            }
+        ]
+        }
+"""
+@router.get("/sector-info/{sector_id}")
+def get_sector_info(sector_id: int, db: Session = Depends(get_db)):
+    service = StockService(db)
+    sector_info = service.get_sector_info(sector_id)
+    if not sector_info:
+        raise HTTPException(status_code=404, detail="Sector info not found")
+    return sector_info
+
+
 
 # GET ALL THE STOCKS IN THE DB -> DETAİLED İNFO USING YAHOO FİNANCE
 @router.get("/stocks-all/{symbol}")

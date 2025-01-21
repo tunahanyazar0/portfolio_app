@@ -10,6 +10,13 @@ import {
   AccordionSummary,
   AccordionDetails,
   Chip,
+  TextField,
+  Button,
+  Autocomplete,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import portfolioService from '../services/portfolioService';
@@ -17,6 +24,7 @@ import stockService from '../services/stockService';
 import { useParams } from 'react-router-dom';
 
 const PortfolioPage = ({ match }) => {
+    // display portfolio details 
     const { id: portfolioId } = useParams();
     const [portfolio, setPortfolio] = useState(null);
     const [holdings, setHoldings] = useState([]);
@@ -26,6 +34,22 @@ const PortfolioPage = ({ match }) => {
     const [totalProfit, setTotalProfit] = useState(0);
     const [loading, setLoading] = useState(true);
 
+    // New state for holdings management
+    const [searchQuery, setSearchQuery] = useState('');
+    const [stockOptions, setStockOptions] = useState([]);
+    const [selectedStock, setSelectedStock] = useState(null);
+    const [quantity, setQuantity] = useState('');
+    const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [selectedHoldingId, setSelectedHoldingId] = useState(null);
+    const [averagePrice, setAveragePrice] = useState('');
+    const [decreaseQuantity, setDecreaseQuantity] = useState('');
+    const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+    const [selectedHolding, setSelectedHolding] = useState(null);
+
+
+    // DISPLAY PORTFOLIO DETAILS    
     const COLORS = [
       '#2563eb', '#059669', '#d97706', '#dc2626', 
       '#7c3aed', '#db2777', '#2dd4bf', '#84cc16',
@@ -47,61 +71,166 @@ const PortfolioPage = ({ match }) => {
         }).format(value);
     };
 
+    const fetchPortfolioData = async () => {
+        try {
+            const portfolioData = await portfolioService.getPortfolio(portfolioId);
+            setPortfolio(portfolioData);
+
+            const allSectors = await stockService.getAllSectors();
+            const sectorMapping = {};
+            allSectors.forEach((sector) => {
+                sectorMapping[sector.sector_id] = sector.name;
+            });
+            setSectorMap(sectorMapping);
+
+            const holdingsData = await portfolioService.getPortfolioHoldings(portfolioId);
+
+            const enhancedHoldings = await Promise.all(
+                holdingsData.map(async (holding) => {
+                    const stockPriceInfo = await stockService.getStockPrice(holding.stock_symbol);
+                    const SectorData = await stockService.getSectorOfStock(holding.stock_symbol);
+
+                    const currentMarketPrice = Number(stockPriceInfo.close_price);
+                    const marketValue = currentMarketPrice * holding.quantity;
+                    const profitLoss = (currentMarketPrice - holding.average_price) * holding.quantity;
+                    const profitLossPercentage = ((currentMarketPrice - holding.average_price) / holding.average_price) * 100;
+
+                    return {
+                        ...holding,
+                        currentMarketPrice,
+                        marketValue,
+                        profitLoss,
+                        profitLossPercentage,
+                        sector: sectorMapping[SectorData.sector_id]
+                    };
+                })
+            );
+
+            const totalPortfolioValue = enhancedHoldings.reduce((sum, holding) => sum + holding.marketValue, 0);
+            const totalPortfolioProfit = enhancedHoldings.reduce((sum, holding) => sum + holding.profitLoss, 0);
+            
+            setTotalValue(totalPortfolioValue);
+            setTotalProfit(totalPortfolioProfit);
+            setHoldings(enhancedHoldings);
+
+            const uniqueSectors = [...new Set(enhancedHoldings.map((holding) => holding.sector))];
+            setSectors(uniqueSectors);
+
+            setLoading(false);
+        } catch (error) {
+            console.error('Error fetching portfolio data:', error);
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchPortfolioData = async () => {
+        fetchPortfolioData();
+    }, [portfolioId]);
+
+    // Search for stocks as user types
+    useEffect(() => {
+        const searchStocks = async () => {
+            if (searchQuery.length < 2) return;
             try {
-                const portfolioData = await portfolioService.getPortfolio(portfolioId);
-                setPortfolio(portfolioData);
-
-                const allSectors = await stockService.getAllSectors();
-                const sectorMapping = {};
-                allSectors.forEach((sector) => {
-                    sectorMapping[sector.sector_id] = sector.name;
-                });
-                setSectorMap(sectorMapping);
-
-                const holdingsData = await portfolioService.getPortfolioHoldings(portfolioId);
-
-                const enhancedHoldings = await Promise.all(
-                    holdingsData.map(async (holding) => {
-                        const stockPriceInfo = await stockService.getStockPrice(holding.stock_symbol);
-                        const SectorData = await stockService.getSectorOfStock(holding.stock_symbol);
-
-                        const currentMarketPrice = Number(stockPriceInfo.close_price);
-                        const marketValue = currentMarketPrice * holding.quantity;
-                        const profitLoss = (currentMarketPrice - holding.average_price) * holding.quantity;
-                        const profitLossPercentage = ((currentMarketPrice - holding.average_price) / holding.average_price) * 100;
-
-                        return {
-                            ...holding,
-                            currentMarketPrice,
-                            marketValue,
-                            profitLoss,
-                            profitLossPercentage,
-                            sector: sectorMapping[SectorData.sector_id]
-                        };
-                    })
-                );
-
-                const totalPortfolioValue = enhancedHoldings.reduce((sum, holding) => sum + holding.marketValue, 0);
-                const totalPortfolioProfit = enhancedHoldings.reduce((sum, holding) => sum + holding.profitLoss, 0);
-                
-                setTotalValue(totalPortfolioValue);
-                setTotalProfit(totalPortfolioProfit);
-                setHoldings(enhancedHoldings);
-
-                const uniqueSectors = [...new Set(enhancedHoldings.map((holding) => holding.sector))];
-                setSectors(uniqueSectors);
-
-                setLoading(false);
+                const response = await stockService.searchStocks(searchQuery);
+                setStockOptions(Array.isArray(response) ? response : [response]);
             } catch (error) {
-                console.error('Error fetching portfolio data:', error);
-                setLoading(false);
+                console.error('Error searching stocks:', error);
+                setStockOptions([]);
             }
         };
 
-        fetchPortfolioData();
-    }, [portfolioId]);
+        const debounceTimer = setTimeout(searchStocks, 300);
+        return () => clearTimeout(debounceTimer);
+    }, [searchQuery]);
+
+    const handleAddHolding = async () => {
+        if (!selectedStock || !quantity || !averagePrice) return;
+        
+        setIsLoading(true);
+        /*  
+            selectedStock is sth like:
+            {stock_symbol: 'ORGE', name: 'Orge Enerji Elektrik Taahhüt Anonim Sirketi', sector_id: 5, market_cap: 6660152320, last_updated: '2025-01-19T15:43:58'}
+        */
+        try {
+            // Create the payload exactly as required
+            const payload = {
+                symbol: String(selectedStock.stock_symbol), // Ensure it's a string
+                quantity: Number(quantity),           // Ensure it's a number
+                price: Number(averagePrice)          // Ensure it's a number
+            };
+            
+            // using the portfolioService to add the holding
+            const response = await portfolioService.addHolding(portfolioId, 
+                payload.symbol, 
+                payload.quantity,
+                payload.price
+            );
+            
+            // Log the response
+            console.log('Add holding response:', response);
+            
+            // Fetch the updated portfolio data
+            await fetchPortfolioData();
+            setIsAddDialogOpen(false);
+            resetForm();
+        } catch (error) {
+            console.error('Error details:', error.response?.data || error);
+            alert(`Failed to add holding. Error: ${error.message}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteHolding = async (holdingId) => {
+        setIsLoading(true);
+        console.log(holdingId);
+        try {
+            await portfolioService.deleteHolding(holdingId);
+            await fetchPortfolioData();
+            setIsDeleteDialogOpen(false);
+        } catch (error) {
+            console.error('Error deleting holding:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleUpdateHolding = async () => {
+        if (!selectedHolding || !decreaseQuantity) return;
+        
+        setIsLoading(true);
+        try {
+            const newQuantity = selectedHolding.quantity - Number(decreaseQuantity);
+
+            // we just pass holding id and also new quantity to decreaseHolding function
+            
+            // if the new quantity is less than or equal to 0, we delete the holding
+            if (newQuantity <= 0) {
+                // If new quantity would be 0 or negative, delete the holding
+                await portfolioService.deleteHolding(selectedHolding.holding_id);
+            } else {
+                // decrease the quantity of the holding by the given amount
+                await portfolioService.decreaseHolding(selectedHolding.holding_id, Number(decreaseQuantity)); 
+            }
+            
+            await fetchPortfolioData();
+            setIsUpdateDialogOpen(false);
+            setDecreaseQuantity('');
+            setSelectedHolding(null);
+        } catch (error) {
+            console.error('Error updating holding:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const resetForm = () => {
+        setSelectedStock(null);
+        setQuantity('');
+        setAveragePrice('');
+        setSearchQuery('');
+    };
 
     const getSectorHoldings = (sectorName) => {
         return holdings.filter(holding => holding.sector === sectorName);
@@ -113,6 +242,7 @@ const PortfolioPage = ({ match }) => {
             .reduce((sum, holding) => sum + holding.marketValue, 0);
     };
 
+
     if (loading) {
         return (
             <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
@@ -123,6 +253,8 @@ const PortfolioPage = ({ match }) => {
 
     return (
         <Container maxWidth="xl" sx={{ py: 4 }}>
+
+            {/* Portfolio Details Section */}
             <Box sx={{ mb: 4, textAlign: 'center' }}>
                 <Typography variant="h3" sx={{ 
                     fontWeight: 700, 
@@ -294,6 +426,263 @@ const PortfolioPage = ({ match }) => {
                     </Box>
                 </Grid>
             </Grid>
+
+            {/* Manage Holdings Section */}
+            <Box sx={{ mt: 6, mb: 4 }}>
+                <Paper elevation={3} sx={{
+                    p: 4,
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)',
+                    borderRadius: 2
+                }}>
+                    <Typography variant="h5" sx={{
+                        mb: 4,
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                        backgroundClip: 'text',
+                        color: 'transparent'
+                    }}>
+                        Manage Holdings
+                    </Typography>
+
+                    <Grid container spacing={3} alignItems="center">
+                        <Grid item xs={12} md={4}>
+                            <Autocomplete
+                                value={selectedStock}
+                                onChange={(_, newValue) => setSelectedStock(newValue)}
+                                options={stockOptions}
+                                getOptionLabel={(option) => `${option.stock_symbol} - ${option.name || ''}`}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Search Stock Symbol"
+                                        variant="outlined"
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                )}
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={2}>
+                            <TextField
+                                fullWidth
+                                label="Quantity"
+                                type="number"
+                                value={quantity}
+                                onChange={(e) => setQuantity(e.target.value)}
+                                variant="outlined"
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                            <TextField
+                                fullWidth
+                                label="Average Price (TRY)"
+                                type="number"
+                                value={averagePrice}
+                                onChange={(e) => setAveragePrice(e.target.value)}
+                                variant="outlined"
+                            />
+                        </Grid>
+                        <Grid item xs={12} md={3}>
+                            <Button
+                                fullWidth
+                                variant="contained"
+                                onClick={() => setIsAddDialogOpen(true)}
+                                disabled={!selectedStock || !quantity || !averagePrice}
+                                sx={{
+                                    color : 'blue',
+                                    background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                                    py: 2
+                                }}
+                            >
+                                Add Holding
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Paper>
+            </Box>
+
+            {/* Update holdings list to include decrease quantity button */}
+            {sectors.map((sector) => (
+                <Paper key={sector} elevation={3} sx={{ 
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)'
+                }}>
+                    <Accordion>
+                        <AccordionSummary
+                            expandIcon={<Typography variant="h6">↓</Typography>}
+                            sx={{ 
+                                '& .MuiAccordionSummary-content': { 
+                                    display: 'flex', 
+                                    alignItems: 'center',
+                                    gap: 2
+                                }
+                            }}
+                        >
+                            <Typography variant="h6" sx={{ flex: 1 }}>{sector}</Typography>
+                            <Chip 
+                                label={formatCurrency(getSectorValue(sector))}
+                                sx={{ 
+                                    backgroundColor: COLORS[sectors.indexOf(sector) % COLORS.length],
+                                    color: 'white',
+                                    fontWeight: 'bold'
+                                }}
+                            />
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ p: 0 }}>
+                            {getSectorHoldings(sector).map((holding) => (
+                                <Box
+                                    key={holding.holding_id}
+                                    sx={{
+                                        p: 2,
+                                        borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+                                        '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.02)' }
+                                    }}
+                                >
+                                    <Grid container alignItems="center" spacing={2}>
+                                        <Grid item xs={12} sm={2}>
+                                            <Typography variant="subtitle1" fontWeight="bold">
+                                                {holding.stock_symbol}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={2}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                Quantity: {holding.quantity}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={2}>
+                                            <Typography variant="body2">
+                                                Avg: {formatCurrency(holding.average_price)}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={2}>
+                                            <Typography variant="body2">
+                                                Current: {formatCurrency(holding.currentMarketPrice)}
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={6} sm={2}>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    color: holding.profitLoss >= 0 ? '#059669' : '#dc2626',
+                                                    fontWeight: 'bold'
+                                                }}
+                                            >
+                                                {formatCurrency(holding.profitLoss)} ({formatNumber(holding.profitLossPercentage)}%)
+                                            </Typography>
+                                        </Grid>
+                                        <Grid item xs={12} sm={2} sx={{ display: 'flex', gap: 1 }}>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                onClick={() => {
+                                                    setSelectedHolding(holding);
+                                                    setIsUpdateDialogOpen(true);
+                                                }}
+                                            >
+                                                Decrease
+                                            </Button>
+                                            <Button
+                                                size="small"
+                                                variant="outlined"
+                                                color="error"
+                                                onClick={() => {
+                                                    setSelectedHoldingId(holding.holding_id);
+                                                    setIsDeleteDialogOpen(true);
+                                                }}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+                            ))}
+                        </AccordionDetails>
+                    </Accordion>
+                </Paper>
+            ))}
+
+            {/* Add Holding Dialog */}
+            <Dialog open={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)}>
+                <DialogTitle>Confirm Add Holding</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Are you sure you want to add {quantity} shares of {selectedStock?.symbol} at {formatCurrency(averagePrice)} per share?
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsAddDialogOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleAddHolding}
+                        variant="contained"
+                        disabled={isLoading}
+                        sx={{ background: 'linear-gradient(45deg, #2563eb, #7c3aed)' }}
+                    >
+                        {isLoading ? <CircularProgress size={24} /> : 'Confirm'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Decrease Quantity Dialog */}
+            <Dialog open={isUpdateDialogOpen} onClose={() => setIsUpdateDialogOpen(false)}>
+                <DialogTitle>Decrease Holding Quantity</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ pt: 2 }}>
+                        <Typography sx={{ mb: 2 }}>
+                            Current quantity: {selectedHolding?.quantity || 0}
+                        </Typography>
+                        <TextField
+                            fullWidth
+                            label="Quantity to Decrease"
+                            type="number"
+                            value={decreaseQuantity}
+                            onChange={(e) => setDecreaseQuantity(e.target.value)}
+                            inputProps={{ 
+                                min: 1, 
+                                max: selectedHolding?.quantity || 0 
+                            }}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsUpdateDialogOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleUpdateHolding}
+                        variant="contained"
+                        disabled={isLoading || !decreaseQuantity || decreaseQuantity > (selectedHolding?.quantity || 0)}
+                        sx={{ background: 'linear-gradient(45deg, #2563eb, #7c3aed)' }}
+                    >
+                        {isLoading ? <CircularProgress size={24} /> : 'Confirm'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Dialog */}
+            <Dialog open={isDeleteDialogOpen} onClose={() => setIsDeleteDialogOpen(false)}>
+                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <Typography>
+                        Are you sure you want to delete this holding?
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setIsDeleteDialogOpen(false)} color="primary">
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => handleDeleteHolding(selectedHoldingId)}
+                        variant="contained"
+                        color="error"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? <CircularProgress size={24} /> : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 };
