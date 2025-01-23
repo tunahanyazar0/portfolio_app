@@ -46,6 +46,7 @@ const authService = {
     }
   },
 
+  // this function is used to get user data (access token and token type) from local storage
   getCurrentUser: () => {
     try {
       const user = localStorage.getItem('user');

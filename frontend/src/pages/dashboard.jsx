@@ -5,31 +5,70 @@ import {
   Grid,
   Box,
   Button,
-  Card,
-  CardContent,
-  CardActions,
 } from '@mui/material';
-import PortfolioCard from '../components/PortfolioCard'; // Import portfolio card component
 import SectorCard from '../components/SectorCard'; // Import sector card component
 import stockService from '../services/stockService'; // Import stock services
+import NewsSection from '../components/NewsSection'; // Import NewsSection
+import authService from '../services/authService';
+import PortfolioCard from '../components/PortfolioCard';
+import portfolioService from '../services/portfolioService';
+import newsService from '../services/newsService';
 
-const Homepage = () => {
+const Dashboard = () => {
   const [portfolios, setPortfolios] = useState([]);
   const [sectors, setSectors] = useState([]);
+  // news
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  /*
+  user is sth like:
+    {
+      "user_id": 1,
+      "username": "johndoe",
+      "role": "user",
+      "email": "..",
+      "first_name": "..",
+      "last_name": "..",
+      "created_at": "2021-12-12T12:12:12.000000Z"
+    }
+  */
+
   useEffect(() => {
+    // fetch data
     const fetchData = async () => {
       try {
+        const username = authService.getUsernameFromToken();
+        const user = await authService.getUserInformationByUsername(username);
+        const userId = user.user_id;
+        const data = await portfolioService.getUserPortfolios(userId);
+        /*
+            It returns an array of portfolios like this:
+            [
+                {
+                    "portfolio_id": 1,
+                    "user_id": 1,
+                    "name": "My Portfolio",
+                    "created_at": "2022-01-01T00:00:00Z"
+                },
+                {
+                    "portfolio_id": 2,
+                    "user_id": 1,
+                    "name": "Tech Stocks",
+                    "created_at": "2022-01-01T00:00:00Z"
+                }, ...
+
+        */
+
         // Fetch data for portfolios, sectors, and news
-        const portfoliosData = await stockService.getAllStocksDetailed();
         const sectorsData = await stockService.getAllSectors();
-        // Fetch news from an external API or backend
-        const newsData = await fetchStockNews();
+        // fetch portfolios of the user by passing the user id 
+        const portfoliosData = await portfolioService.getUserPortfolios(userId);
+        console.log(portfoliosData);
+
+        // Get top 3 portfolios and sectors
         setPortfolios(portfoliosData.slice(0, 3)); // Limit to top 3 portfolios
         setSectors(sectorsData.slice(0, 3)); // Limit to top 3 sectors
-        setNews(newsData);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -37,67 +76,28 @@ const Homepage = () => {
       }
     };
 
-    fetchData();
-  }, []);
+    const FetchNews = async () => {
+      // Fetch news about turkish economy / stock market
+      const newsData = await newsService.getNews();
+      setNews(newsData);
+    }
 
-  const fetchStockNews = async () => {
-    // Placeholder for news fetching logic
-    // Replace with API call to NewsAPI or custom backend
-    return [
-      {
-        title: 'Stock Market Reaches New Highs',
-        description: 'The stock market has hit an all-time high with major indices rising significantly.',
-        url: 'https://example.com/news1',
-      },
-      {
-        title: 'Tech Stocks Lead Gains',
-        description: 'Tech companies outperformed expectations, driving market growth.',
-        url: 'https://example.com/news2',
-      },
-      {
-        title: 'Economic Outlook Remains Positive',
-        description: 'Experts predict steady growth in the economy as markets stabilize.',
-        url: 'https://example.com/news3',
-      },
-    ];
-  };
+
+    // fetch portfolio and sector datas
+    fetchData();
+    // fetch news
+    FetchNews();
+  }, []); // these 2 function will be called when the component is mounted
 
   return (
     <Container>
-      {/* Hero Section */}
-      <Box
-        sx={{
-          textAlign: 'center',
-          marginTop: '2rem',
-          padding: '2rem',
-          backgroundColor: 'primary.main',
-          color: 'white',
-          borderRadius: '8px',
-        }}
-      >
-        <Typography variant="h3" sx={{ fontWeight: 700 }}>
-          Welcome to Z Investment
-        </Typography>
-        <Typography variant="h6" sx={{ margin: '1rem 0' }}>
-          Your ultimate platform for tracking portfolios, sectors, and stocks.
-        </Typography>
-        <Button
-          variant="contained"
-          size="large"
-          sx={{ marginTop: '1rem' }}
-          onClick={() => window.location.href = '/dashboard'}
-        >
-          Get Started
-        </Button>
-      </Box>
-
       {/* Portfolios Preview */}
       <Typography variant="h4" sx={{ margin: '2rem 0 1rem', fontWeight: 700 }}>
         Featured Portfolios
       </Typography>
       <Grid container spacing={3}>
         {portfolios.map((portfolio) => (
-          <Grid item xs={12} sm={6} md={4} key={portfolio.id}>
+          <Grid item xs={12} sm={6} md={4} key={portfolio.porfolio_id}>
             <PortfolioCard portfolio={portfolio} />
           </Grid>
         ))}
@@ -110,50 +110,15 @@ const Homepage = () => {
       <Grid container spacing={3}>
         {sectors.map((sector) => (
           <Grid item xs={12} sm={6} md={4} key={sector.sector_id}>
-            <SectorCard sector={sector} />
+            <SectorCard sectorId={sector.sector_id} />
           </Grid>
         ))}
       </Grid>
 
       {/* News Section */}
-      <Typography variant="h4" sx={{ margin: '2rem 0 1rem', fontWeight: 700 }}>
-        Latest Stock News
-      </Typography>
-      <Grid container spacing={3}>
-        {news.map((article, index) => (
-          <Grid item xs={12} md={4} key={index}>
-            <Card
-              sx={{
-                borderRadius: 4,
-                boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
-              }}
-            >
-              <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  {article.title}
-                </Typography>
-                <Typography variant="body2" sx={{ margin: '1rem 0' }}>
-                  {article.description}
-                </Typography>
-              </CardContent>
-              <CardActions>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  size="small"
-                  href={article.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Read More
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <NewsSection news = {news} />
     </Container>
   );
 };
 
-export default Homepage;
+export default Dashboard;
