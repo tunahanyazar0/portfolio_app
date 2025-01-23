@@ -79,7 +79,7 @@ const newsService = {
         try {
             const response = await axios.get(`${API_BASE_URL}/everything`, {
                 params: {
-                    q: sector,
+                    q: `"${sector}"`,
                     language: 'en',
                     sortBy: 'publishedAt',
                     pageSize: 10,

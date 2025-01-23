@@ -22,6 +22,9 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 import portfolioService from '../services/portfolioService';
 import stockService from '../services/stockService';
 import { useParams } from 'react-router-dom';
+// for news section
+import NewsSection from '../components/NewsSection';
+import newsService from '../services/newsService';
 
 const PortfolioPage = ({ match }) => {
     // display portfolio details 
@@ -48,6 +51,8 @@ const PortfolioPage = ({ match }) => {
     const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
     const [selectedHolding, setSelectedHolding] = useState(null);
 
+    // new state for portfolio news
+    const [portfolioNews, setPortfolioNews] = useState([]);
 
     // DISPLAY PORTFOLIO DETAILS    
     const COLORS = [
@@ -143,6 +148,23 @@ const PortfolioPage = ({ match }) => {
         const debounceTimer = setTimeout(searchStocks, 300);
         return () => clearTimeout(debounceTimer);
     }, [searchQuery]);
+
+    // Fetch news about the portfolio when holdings change or page loads (sayfa yüklendiğinde veya holdingler değiştiğinde)
+    useEffect(() => {
+        const fetchPortfolioNews = async () => {
+        if (holdings.length > 0) {
+            try {
+            const companyNames = [...new Set(holdings.map(holding => holding.name))];
+            const news = await newsService.getNewsAboutPortfolio(companyNames);
+            setPortfolioNews(news);
+            } catch (error) {
+            console.error('Error fetching portfolio news:', error);
+            }
+        }
+        };
+    
+        fetchPortfolioNews();
+    }, [holdings]);
 
     const handleAddHolding = async () => {
         if (!selectedStock || !quantity || !averagePrice) return;
@@ -683,6 +705,24 @@ const PortfolioPage = ({ match }) => {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Portfolio News Section */}
+            {portfolioNews.length > 0 && (
+            <Box sx={{ mt: 6 }}>
+                <Typography variant="h5" sx={{
+                mb: 4,
+                fontWeight: 600,
+                textAlign: 'center',
+                background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                backgroundClip: 'text',
+                color: 'transparent'
+                }}>
+                News About Your Portfolio Companies
+                </Typography>
+                <NewsSection news={portfolioNews} />
+            </Box>
+            )}
+
         </Container>
     );
 };

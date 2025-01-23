@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
     Typography, 
     Button, 
@@ -6,88 +6,172 @@ import {
     Card, 
     CardContent, 
     CardMedia, 
-    CircularProgress, 
-    Link 
+    Grid,
+    Paper,
+    Fade
 } from '@mui/material';
-import newsService from '../services/newsService'; 
+import { OpenInNew } from '@mui/icons-material';
 
-const NewsSection = ({ news }) => {
+const NewsSection = ({ news, loading = false }) => {
     const [showMore, setShowMore] = useState(false); 
 
-    const visibleNews = showMore ? news.slice(0, 10) : news.slice(0, 3);
+    const visibleNews = showMore ? news : news.slice(0, 3);
+
+    if (loading) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" height={300}>
+                <Typography variant="h6" color="textSecondary">
+                    Loading news...
+                </Typography>
+            </Box>
+        );
+    }
 
     return (
-        <Box>
-            <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', textAlign: 'center' }}>
-                Latest News 
+        <Paper 
+            elevation={0} 
+            sx={{ 
+                p: 3, 
+                backgroundColor: 'background.default',
+                borderRadius: 3 
+            }}
+        >
+            <Typography 
+                variant="h4" 
+                sx={{ 
+                    mb: 4, 
+                    fontWeight: 700, 
+                    textAlign: 'center', 
+                    color: 'text.primary',
+                    letterSpacing: -1
+                }}
+            >
+                Latest News
             </Typography>
 
             {news.length === 0 ? (
-                <Typography variant="body1" sx={{ textAlign: 'center' }}>
-                    No news available.
+                <Typography 
+                    variant="body1" 
+                    sx={{ 
+                        textAlign: 'center', 
+                        color: 'text.secondary',
+                        fontStyle: 'italic'
+                    }}
+                >
+                    No news available at the moment.
                 </Typography>
             ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Grid container spacing={3}>
                     {visibleNews.map((article, index) => (
-                        <Card 
-                            key={index} 
-                            sx={{ 
-                                display: 'flex', 
-                                height: 200, 
-                                transition: 'transform 0.2s',
-                                '&:hover': { transform: 'scale(1.02)' }
-                            }}
-                        >
-                            {article.image && (
-                                <CardMedia
-                                    component="img"
-                                    sx={{ width: 200, objectFit: 'cover' }}
-                                    image={article.image}
-                                    alt={article.title}
-                                />
-                            )}
-                            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                <Link 
-                                    href={article.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
+                        <Grid item xs={12} key={index}>
+                            <Fade in={true} timeout={500 * (index + 1)}>
+                                <Card 
+                                    elevation={2}
                                     sx={{ 
-                                        color: 'primary.main', 
-                                        textDecoration: 'none',
-                                        '&:hover': { textDecoration: 'underline' }
+                                        display: 'flex', 
+                                        height: { xs: 'auto', sm: 250 },
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': { 
+                                            transform: 'translateY(-5px)', 
+                                            boxShadow: 3 
+                                        }
                                     }}
                                 >
-                                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                                        {article.title}
-                                    </Typography>
-                                </Link>
-                                <Typography variant="body2" color="text.secondary">
-                                    {article.source} • {new Date(article.publishedAt).toLocaleDateString()}
-                                </Typography>
-                                <Typography variant="body1" sx={{ mt: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {article.description}
-                                </Typography>
-                            </CardContent>
-                        </Card>
+                                    {article.image && (
+                                        <CardMedia
+                                            component="img"
+                                            sx={{ 
+                                                width: { xs: 120, sm: 250 }, 
+                                                flexShrink: 0,
+                                                objectFit: 'cover'
+                                            }}
+                                            image={article.image}
+                                            alt={article.title}
+                                        />
+                                    )}
+                                    <CardContent 
+                                        sx={{ 
+                                            flex: 1, 
+                                            display: 'flex', 
+                                            flexDirection: 'column',
+                                            p: 3
+                                        }}
+                                    >
+                                        <Box 
+                                            component="a" 
+                                            href={article.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            sx={{ 
+                                                display: 'flex', 
+                                                alignItems: 'center',
+                                                color: 'inherit',
+                                                textDecoration: 'none',
+                                                mb: 1
+                                            }}
+                                        >
+                                            <Typography 
+                                                variant="h6" 
+                                                sx={{ 
+                                                    fontWeight: 600, 
+                                                    flexGrow: 1,
+                                                    transition: 'color 0.2s',
+                                                    '&:hover': { color: 'primary.main' }
+                                                }}
+                                            >
+                                                {article.title}
+                                            </Typography>
+                                            <OpenInNew 
+                                                color="action" 
+                                                sx={{ ml: 1, fontSize: 18 }} 
+                                            />
+                                        </Box>
+                                        <Typography 
+                                            variant="body2" 
+                                            color="text.secondary"
+                                            sx={{ mb: 1 }}
+                                        >
+                                            {article.source} • {new Date(article.publishedAt).toLocaleDateString()}
+                                        </Typography>
+                                        <Typography 
+                                            variant="body1" 
+                                            color="text.primary"
+                                            sx={{ 
+                                                overflow: 'hidden', 
+                                                textOverflow: 'ellipsis',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 3,
+                                                WebkitBoxOrient: 'vertical'
+                                            }}
+                                        >
+                                            {article.description}
+                                        </Typography>
+                                    </CardContent>
+                                </Card>
+                            </Fade>
+                        </Grid>
                     ))}
+                </Grid>
+            )}
 
-                    {news.length > 3 && (
-                        <Button
-                            onClick={() => setShowMore(!showMore)}
-                            variant="contained"
-                            color="primary"
-                            sx={{
-                                display: 'block',
-                                margin: '1rem auto 0',
-                                textTransform: 'capitalize',
-                            }}
-                        >
-                            {showMore ? 'Show Less' : 'Show More'}
-                        </Button>
-                    )}
+            {news.length > 3 && (
+                <Box display="flex" justifyContent="center" mt={3}>
+                    <Button
+                        onClick={() => setShowMore(!showMore)}
+                        variant="contained"
+                        color="primary"
+                        sx={{
+                            textTransform: 'none',
+                            px: 4,
+                            py: 1.5,
+                            borderRadius: 3
+                        }}
+                    >
+                        {showMore ? 'Show Less' : 'Show More'}
+                    </Button>
                 </Box>
             )}
-        </Box>
+        </Paper>
     );
 };
 

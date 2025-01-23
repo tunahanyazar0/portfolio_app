@@ -30,6 +30,7 @@ const SectorPage = () => {
   const [news, setNews] = useState([]);
 
   useEffect(() => {
+    console.log("here -1");
     const fetchSectorInfo = async () => {
       try {
         const data = await stockService.getSectorInfo(sectorId);
@@ -54,6 +55,7 @@ const SectorPage = () => {
           }
         */
         setSectorInfo(data);
+        console.log(sectorInfo);
       } catch (error) {
         console.error('Error fetching sector info:', error);
       } finally {
@@ -61,22 +63,31 @@ const SectorPage = () => {
       }
     };
 
+    // fetch sector info first
+    fetchSectorInfo();
+  }, [sectorId]); // run this effect every time sectorId changes
+
+  // fetching news about the sector is done every time the component is rendered
+  useEffect(() => {
     // fetch news about the sector by its name
     const fetchNews = async () => {
       try {
+        console.log("here 1");
         const name_of_the_sector = sectorInfo.sector.name;
-        const data = await newsService.getNewsAboutSector(sectorId);
+        console.log("name of the sector: ", name_of_the_sector);
+        const data = await newsService.getNewsAboutSector(name_of_the_sector);
         setNews(data);
       } catch (error) {
         console.error('Error fetching news about sector:', error);
       }
-    }
+    };
 
-    // fetch sector info first
-    fetchSectorInfo();
-    // then, fetch news about the sector
-    fetchNews();
-  }, [sectorId]);
+    if (sectorInfo) {
+      console.log("here 2");
+      fetchNews();
+    }
+  }, [sectorInfo]); // run this effect every time sectorInfo changes
+    
 
   if (loading) {
     return (
