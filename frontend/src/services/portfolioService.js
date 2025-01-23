@@ -12,6 +12,8 @@ class PortfolioService {
 
     // Create a new portfolio for a user but no holding inside for now
     async createPortfolio(userId, name) {
+        // name should be string
+        if (!name) throw new Error('Portfolio name is required');   
         const response = await axios.post(`${this.apiURL}/portfolios`, { user_id: userId, name });
         return response.data;
     }
