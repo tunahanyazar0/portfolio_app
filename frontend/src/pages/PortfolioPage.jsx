@@ -364,7 +364,8 @@ const PortfolioPage = ({ match }) => {
                         </ResponsiveContainer>
                     </Paper>
                 </Grid>
-
+                
+                {/* Holdings Section */}
                 <Grid item xs={12} md={7}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {sectors.map((sector) => (

@@ -41,6 +41,7 @@ const BottomNavbar = () => {
     <Box
       sx={{
         width: '100%',
+        height: 53,
         background: (theme) =>
           `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',

@@ -64,7 +64,7 @@ const Navbar = () => {
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
-      <Toolbar sx={{ height: 70, px: { xs: 2, sm: 4 } }}>
+      <Toolbar sx={{ height: 60, px: { xs: 2, sm: 4 } }}>
         {/* Logo */}
         <Button
           onClick={() => navigate('/dashboard')}
