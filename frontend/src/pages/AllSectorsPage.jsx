@@ -1,5 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Grid, CircularProgress, Typography } from '@mui/material';
+import { 
+  Container, 
+  Grid, 
+  CircularProgress, 
+  Typography, 
+  TextField, 
+  Button 
+} from '@mui/material';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
+
 import stockService from '../services/stockService';
 import SectorCard from '../components/SectorCard';
 
@@ -7,6 +18,7 @@ const AllSectorsPage = () => {
   const [sectors, setSectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchSectors = async () => {
@@ -28,7 +40,6 @@ const AllSectorsPage = () => {
               "name": "Asset Management"
             },
           ]
-
         */
         setSectors(data);
       } catch (err) {
@@ -44,37 +55,97 @@ const AllSectorsPage = () => {
 
   if (loading) {
     return (
-      <Container
+      <Container 
         sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center', 
+          alignItems: 'center', 
           height: '80vh',
+          textAlign: 'center'
         }}
       >
-        <CircularProgress />
+        <CircularProgress size={60} thickness={4} />
+        <Typography variant="h6" sx={{ marginTop: 2, color: 'text.secondary' }}>
+          Loading Sectors...
+        </Typography>
       </Container>
     );
   }
 
   if (error) {
     return (
-      <Container>
-        <Typography color="error" align="center">
+      <Container 
+        sx={{
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '80vh',
+          textAlign: 'center'
+        }}
+      >
+        <ErrorOutlineIcon sx={{ fontSize: 80, color: 'error.main', marginBottom: 2 }} />
+        <Typography variant="h6" color="error">
           {error}
         </Typography>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          sx={{ marginTop: 2 }}
+          onClick={() => window.location.reload()}
+        >
+          Try Again
+        </Button>
       </Container>
     );
   }
 
+  const filteredSectors = sectors.filter(sector => 
+    sector.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <Container>
-      <Grid container spacing={4}>
-        {sectors.map((sector) => (
-          <Grid item xs={12} sm={6} md={4} key={sector.sector_id}>
-            <SectorCard
-              sectorId={sector.sector_id}
-            />
+    <Container 
+      sx={{
+        backgroundColor: '#f4f6f9',
+        minHeight: '100vh',
+        paddingY: 4,
+        borderRadius: 2
+      }}
+    >
+      <Typography 
+        variant="h3" 
+        sx={{ 
+          textAlign: 'center', 
+          marginBottom: 4, 
+          fontWeight: 600, 
+          color: 'primary.main' 
+        }}
+      >
+        Explore Market Sectors
+      </Typography>
+
+      <TextField
+        fullWidth
+        variant="outlined"
+        label="Search Sectors"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        sx={{ marginBottom: 3 }}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          )
+        }}
+      />
+
+      <Grid container spacing={4} justifyContent="center">
+        {filteredSectors.map((sector) => (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={sector.sector_id}>
+            <SectorCard sectorId={sector.sector_id} />
           </Grid>
         ))}
       </Grid>

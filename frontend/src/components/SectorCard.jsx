@@ -56,6 +56,7 @@ const navigate = useNavigate(); // for navigation to sector pages
 
   return (
     <Card
+    onClick={() => navigate(`/sectors/${sectorId}`)} // Navigate to sector detail page
       sx={{
         borderRadius: 6,
         boxShadow: '0 6px 15px rgba(0, 0, 0, 0.1)',
@@ -64,6 +65,11 @@ const navigate = useNavigate(); // for navigation to sector pages
         width: '100%',
         margin: '2rem auto',
         padding: 3,
+        cursor: 'pointer', // Add cursor style to indicate it's clickable
+        transition: 'transform 0.2s', // Optional: add hover effect
+        '&:hover': {
+          transform: 'scale(1.02)' // Optional: slight scale on hover
+        }
       }}
     >
       <CardContent>
@@ -122,17 +128,6 @@ const navigate = useNavigate(); // for navigation to sector pages
             </Typography>
           )}
         </List>
-        {/* Button to navigate the user to sector page */}
-        <CardActions sx={{ justifyContent: 'center' }}>
-            <Button
-            size="medium"
-            variant="contained"
-            color="primary"
-            onClick={() => navigate(`/sectors/${sectorId}`)} // Navigate to sector detail page
-            >
-            View Sector Details
-            </Button>
-        </CardActions>
       </CardContent>
     </Card>
   );
