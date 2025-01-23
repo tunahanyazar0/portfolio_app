@@ -20,6 +20,8 @@ import { useNavigate } from 'react-router-dom';
 import portfolioService from '../services/portfolioService';
 import stockService from '../services/stockService';
 
+// it is a component that displays a portfolio card with a pie chart
+// it takes a portfolio object as a prop
 const PortfolioCard = ({ portfolio }) => {
   const navigate = useNavigate();
   const [pieData, setPieData] = useState([]);

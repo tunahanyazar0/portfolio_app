@@ -16,6 +16,9 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import stockService from '../services/stockService';
 import { useParams } from 'react-router-dom';
+// for news about the sector
+import newsService from '../services/newsService';
+import NewsSection from '../components/NewsSection';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#FF0000'];
 
@@ -23,11 +26,33 @@ const SectorPage = () => {
   const { sectorId } = useParams();
   const [sectorInfo, setSectorInfo] = useState(null);
   const [loading, setLoading] = useState(true);
+  // for news about the sector
+  const [news, setNews] = useState([]);
 
   useEffect(() => {
     const fetchSectorInfo = async () => {
       try {
         const data = await stockService.getSectorInfo(sectorId);
+        /*
+          data is sth like:
+          {
+            sector: {
+              name: "Technology",
+              ...
+            },
+            number_of_companies: 3,
+            total_market_cap: 1000000000,
+            top_3_companies: [
+              {
+                stock_symbol: "AAPL",
+                name: "Apple Inc.",
+                market_cap: 500000000,
+                last_updated: "2021-10-01T00:00:00Z"
+              },
+              ...
+            ]
+          }
+        */
         setSectorInfo(data);
       } catch (error) {
         console.error('Error fetching sector info:', error);
@@ -36,7 +61,21 @@ const SectorPage = () => {
       }
     };
 
+    // fetch news about the sector by its name
+    const fetchNews = async () => {
+      try {
+        const name_of_the_sector = sectorInfo.sector.name;
+        const data = await newsService.getNewsAboutSector(sectorId);
+        setNews(data);
+      } catch (error) {
+        console.error('Error fetching news about sector:', error);
+      }
+    }
+
+    // fetch sector info first
     fetchSectorInfo();
+    // then, fetch news about the sector
+    fetchNews();
   }, [sectorId]);
 
   if (loading) {
@@ -144,6 +183,10 @@ const SectorPage = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      {/* News Section */}
+      <NewsSection news={news} />
+
     </Container>
   );
 };

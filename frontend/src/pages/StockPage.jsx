@@ -7,7 +7,8 @@ import stockService from '../services/stockService';
 import BarChart from '../components/BarChart';
 import Sidebar from '../components/Sidebar';
 import { useRef } from 'react';
-import Navbar from '../components/Navbar';
+import newsService from '../services/newsService';
+import NewsSection from '../components/NewsSection';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -39,6 +40,10 @@ const StockPage = () => {
   // Sidebar related
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  // news related 
+  const [news, setNews] = useState(null);
+
 
   // Fields for navigation
   const fields = [
@@ -108,6 +113,12 @@ const StockPage = () => {
           return;
         }
         setStockInfo(stockInfo);
+
+        // fetch the news for the stock
+        const company_name = stockInfo.shortName;
+        // we make the query the name of the company not the symbol
+        const news = await newsService.getNewsAboutStock(company_name);
+        setNews(news);
 
         // Fetch the most recent stock price
         const priceData = await stockService.getStockPrice(symbol);
@@ -616,6 +627,12 @@ const StockPage = () => {
             )}
         </Grid>
       </Box>
+
+      {/* News Section */}
+      <Box sx={{ my: 4 }}>
+        <NewsSection news={news} />
+      </Box> 
+
     </Container>
   );
 };
