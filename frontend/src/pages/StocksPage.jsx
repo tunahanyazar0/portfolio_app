@@ -141,7 +141,7 @@ const StockMetricsTable = () => {
           color: 'transparent'
         }}
       >
-        Stock Metrics
+        Stocks
       </Typography>
       <TableContainer>
         <Table stickyHeader>
