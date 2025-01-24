@@ -438,43 +438,85 @@ const StockPage = () => {
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+        padding: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
+    },
     plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: `Stock Performance of (TL) (${stock?.stock_symbol})`,
-        font: {
-          size: 16,
+        legend: {
+            display: true,
+            position: 'top',
+            labels: {
+                boxWidth: 20,
+                font: {
+                    weight: 'bold'
+                }
+            }
         },
-      },
-      tooltip: {
-        callbacks: {
-          label: context => {
-            const value = context.raw;
-            return typeof value === 'number' ? `TL ${value.toFixed(2)}` : value;
-          },
+        title: {
+            display: true,
+            text: `Stock Performance (${stock?.stock_symbol})`,
+            font: {
+                size: 18,
+                weight: 'bold',
+                family: 'Arial, sans-serif'
+            },
+            color: '#333',
+            padding: {
+                bottom: 15
+            }
         },
-      },
+        tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: 'white',
+            bodyColor: 'lightgray',
+            borderColor: 'gray',
+            borderWidth: 1,
+            callbacks: {
+                label: context => {
+                    const value = context.raw;
+                    return typeof value === 'number' 
+                        ? `Price: ${value.toFixed(2)} TL` 
+                        : value;
+                },
+            },
+        },
     },
     scales: {
-      x: {
-        title: {
-          display: true,
-          text: 'Date',
+        x: {
+            title: {
+                display: true,
+                text: 'Date',
+                color: '#666',
+                font: {
+                    weight: 'bold'
+                }
+            },
+            grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+            }
         },
-      },
-      y: {
-        title: {
-          display: true,
-          text: 'Price (TL)',
+        y: {
+            title: {
+                display: true,
+                text: 'Price (TL)',
+                color: '#666',
+                font: {
+                    weight: 'bold'
+                }
+            },
+            grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+            },
+            ticks: {
+                callback: value => `${value} TL`,
+                color: '#333'
+            }
         },
-        ticks: {
-          callback: value => `${value} TL`,
-        },
-      },
     },
   };
 
