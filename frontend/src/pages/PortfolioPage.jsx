@@ -22,6 +22,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recha
 import portfolioService from '../services/portfolioService';
 import stockService from '../services/stockService';
 import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 // for news section
 import NewsSection from '../components/NewsSection';
 import newsService from '../services/newsService';
@@ -53,6 +54,9 @@ const PortfolioPage = ({ match }) => {
 
     // new state for portfolio news
     const [portfolioNews, setPortfolioNews] = useState([]);
+
+    // for mavigation to stock pages:
+    const navigate = useNavigate();
 
     // DISPLAY PORTFOLIO DETAILS    
     const COLORS = [
@@ -399,10 +403,13 @@ const PortfolioPage = ({ match }) => {
                                         {getSectorHoldings(sector).map((holding) => (
                                             <Box
                                                 key={holding.holding_id}
+                                                onClick = {() => navigate(`/stocks/${holding.stock_symbol}`)}
                                                 sx={{
                                                     p: 2,
                                                     borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+                                                    cursor: 'pointer', // make the box clickable 
                                                     '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.02)' }
+                                                    
                                                 }}
                                             >
                                                 <Grid container alignItems="center" spacing={2}>
@@ -556,9 +563,11 @@ const PortfolioPage = ({ match }) => {
                             {getSectorHoldings(sector).map((holding) => (
                                 <Box
                                     key={holding.holding_id}
+                                    onClick = {() => navigate(`/stocks/${holding.stock_symbol}`)}
                                     sx={{
                                         p: 2,
                                         borderTop: '1px solid rgba(0, 0, 0, 0.1)',
+                                        cursor: 'pointer', // make the box clickable
                                         '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.02)' }
                                     }}
                                 >

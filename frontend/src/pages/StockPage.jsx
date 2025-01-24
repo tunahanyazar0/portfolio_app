@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Box, CircularProgress, Grid, Paper, ListItemText, ListItem, List, IconButton, Drawer } from '@mui/material';
+import { Container, Typography, Box, CircularProgress, Grid, Paper, ListItemText, ListItem, Chip, List, IconButton, Drawer, Button, ButtonGroup } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { useParams } from 'react-router-dom';
@@ -8,7 +8,13 @@ import BarChart from '../components/BarChart';
 import Sidebar from '../components/Sidebar';
 import { useRef } from 'react';
 import newsService from '../services/newsService';
+
+// Import the components
 import NewsSection from '../components/NewsSection';
+import StockOverviewCard from '../components/StockOverviewCard';
+import FinancialRatiosCard from '../components/FinancialRatiosCard';
+import StockPriceDetailsCard from '../components/StockPriceDetailsCard';
+import FinancialChartsSection from '../components/FinancialChartsSection';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -19,6 +25,36 @@ const StockPage = () => {
   const [price, setPrice] = useState(null); // to store the most recent stock price 
   const [chartData, setChartData] = useState(null); // to store the stock price data for the chart
   const [loading, setLoading] = useState(true);
+
+  // hisse fiyat tablosundaki zaman aralığı seçimi
+  const [dateRange, setDateRange] = useState('1M'); // Default date range is 1 month
+  // label lerin ve value ların tanımlanması. Chart da label lar görünecek, value lar ise backend e gönderilecek
+  const dateRanges = [
+    { label: 'Last Week', value: '1W' },
+    { label: 'Last Month', value: '1M' },
+    { label: 'Year to Date', value: 'YTD' },
+    { label: 'Last Year', value: '1Y' },
+    { label: 'Last 5 Years', value: '5Y' },
+  ];
+
+  // hisse fiyat tablosundaki zaman aralığı değiştiğinde çalışacak fonksiyon
+  const getStartDate = (range) => {
+    const today = new Date();
+    switch (range) {
+      case '1W':
+        return new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
+      case '1M':
+        return new Date(today.setMonth(today.getMonth() - 1)).toISOString().split('T')[0];
+      case 'YTD':
+        return new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+      case '1Y':
+        return new Date(today.setFullYear(today.getFullYear() - 1)).toISOString().split('T')[0];
+      case '5Y':
+        return new Date(today.setFullYear(today.getFullYear() - 5)).toISOString().split('T')[0];
+      default:
+        return new Date(today.setMonth(today.getMonth() - 1)).toISOString().split('T')[0];
+    }
+  };
 
   // income statement related 
   const [revenueChartData, setRevenueChartData] = useState(null);
@@ -124,6 +160,7 @@ const StockPage = () => {
         const priceData = await stockService.getStockPrice(symbol);
         setPrice(priceData.close_price);
 
+        /*
         // Fetch price data for the chart
         const priceResponse = await stockService.getStockPriceInDateRange({
           stock_symbol: symbol,
@@ -138,7 +175,7 @@ const StockPage = () => {
         const labels = priceResponse.map(price => price.date);
         const data = priceResponse.map(price => price.close_price);
 
-        /*
+        
         example priceResponse:
         [
           {"stock_symbol": "AGHOL",
@@ -151,7 +188,7 @@ const StockPage = () => {
             "date":"2024-06-05
             ,"close_price":null}
     ]
-        */
+        
 
         // we need to reverse them to make the recent one to the right
         labels.reverse();
@@ -170,6 +207,7 @@ const StockPage = () => {
             },
           ],
         });
+        */
 
         // Fetch financial data for the stock
         const financialData = await stockService.getFinancialData(stock.stock_symbol);
@@ -329,48 +367,156 @@ const StockPage = () => {
     };
 
     fetchStockData();
-  }, [symbol]);
+  }, [symbol]); // symbol değiştikçe çalışacak operationlar : inside the fetchStockData function
+
+
+  // Stock price chart date range options 
+  const fetchChartData = async (range) => {
+    try {
+      // range is one of the : 1W, 1M, YTD, 1Y, 5Y
+      const startDate = getStartDate(range); // get the start date for the selected range
+      const endDate = new Date().toISOString().split('T')[0]; // get the end date as today
+
+      // Fetch price data for the chart by giving the suitable range
+      const priceResponse = await stockService.getStockPriceInDateRange({
+        stock_symbol: symbol,
+        start_date: startDate,
+        end_date: endDate,
+      });
+
+      // we need to reverse the data to make the recent one to the right
+      const labels = priceResponse.map((price) => price.date);
+      const data = priceResponse.map((price) => price.close_price);
+
+      // chart data state variable ının güncellenmesi
+      setChartData({
+        labels,
+        datasets: [
+          {
+            label: `${stock?.name || symbol} Stock Price`,
+            data,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          },
+        ],
+      });
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    }
+  };
+
+  // above function will be called in an use effect which will be triggered when the date range changes or stock symbol changes
+  useEffect(() => {
+    const fetchStockData = async () => {
+      try {
+        const stock = await stockService.getStock(symbol);
+        if (!stock) {
+          setStock(null);
+          setLoading(false);
+          return;
+        }
+        setStock(stock);
+        
+        const priceData = await stockService.getStockPrice(symbol);
+        setPrice(priceData.close_price);
+
+        // Fetch default chart data for the initial date range
+        fetchChartData(dateRange);
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStockData();
+  }, [symbol, dateRange]);
+
 
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+        padding: {
+            top: 10,
+            bottom: 10,
+            left: 10,
+            right: 10
+        }
+    },
     plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: `Stock Performance of (TL) (${stock?.stock_symbol})`,
-        font: {
-          size: 16,
+        legend: {
+            display: true,
+            position: 'top',
+            labels: {
+                boxWidth: 20,
+                font: {
+                    weight: 'bold'
+                }
+            }
         },
-      },
-      tooltip: {
-        callbacks: {
-          label: context => {
-            const value = context.raw;
-            return typeof value === 'number' ? `TL ${value.toFixed(2)}` : value;
-          },
+        title: {
+            display: true,
+            text: `Stock Performance (${stock?.stock_symbol})`,
+            font: {
+                size: 18,
+                weight: 'bold',
+                family: 'Arial, sans-serif'
+            },
+            color: '#333',
+            padding: {
+                bottom: 15
+            }
         },
-      },
+        tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: 'white',
+            bodyColor: 'lightgray',
+            borderColor: 'gray',
+            borderWidth: 1,
+            callbacks: {
+                label: context => {
+                    const value = context.raw;
+                    return typeof value === 'number' 
+                        ? `Price: ${value.toFixed(2)} TL` 
+                        : value;
+                },
+            },
+        },
     },
     scales: {
-      x: {
-        title: {
-          display: true,
-          text: 'Date',
+        x: {
+            title: {
+                display: true,
+                text: 'Date',
+                color: '#666',
+                font: {
+                    weight: 'bold'
+                }
+            },
+            grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+            }
         },
-      },
-      y: {
-        title: {
-          display: true,
-          text: 'Price (TL)',
+        y: {
+            title: {
+                display: true,
+                text: 'Price (TL)',
+                color: '#666',
+                font: {
+                    weight: 'bold'
+                }
+            },
+            grid: {
+                color: 'rgba(0, 0, 0, 0.05)'
+            },
+            ticks: {
+                callback: value => `${value} TL`,
+                color: '#333'
+            }
         },
-        ticks: {
-          callback: value => `${value} TL`,
-        },
-      },
     },
   };
 
@@ -418,215 +564,122 @@ const StockPage = () => {
 
 
       {/* Stock Price Section */}
-      <Box ref={priceInfoRef} sx={{ my: 4 }}>
-        <Paper elevation={3} sx={{ padding: 2, marginBottom: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {stock.name} ({stock.stock_symbol}) - {price} TL
-            </Typography>
-            <Box sx={{ height: 400 }}>
-              {chartData ? <Line options={chartOptions} data={chartData} /> : <Typography>No data available</Typography>}
-            </Box>
-          </Paper>
+<Box ref={priceInfoRef} sx={{ my: 4 }}>
+  <Paper 
+    elevation={4} 
+    sx={{ 
+      padding: 3, 
+      marginBottom: 4, 
+      background: 'linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%)',
+      position: 'relative',
+      overflow: 'hidden'
+    }}
+  >
+    {/* Stock Header with Price */}
+    <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 3 
+      }}>
+        <Box>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            sx={{ 
+              fontWeight: 'bold', 
+              color: 'primary.main' 
+            }}
+          >
+            {stock.name} ({stock.stock_symbol})
+          </Typography>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              color: 'text.secondary', 
+              fontWeight: 'medium' 
+            }}
+          >
+            Current Price: {price} TL
+          </Typography>
+        </Box>
+        <Chip 
+          label={`Last Updated: ${new Date().toLocaleDateString()}`} 
+          color="primary" 
+          variant="outlined" 
+        />
       </Box>
 
+      {/* Date Range Buttons */}
+      <ButtonGroup
+        variant="contained"
+        fullWidth
+        sx={{ mb: 3 }}
+        aria-label="Date range selection"
+      >
+        {dateRanges.map((range) => (
+          <Button
+            key={range.value}
+            onClick={() => setDateRange(range.value)}
+            color={dateRange === range.value ? 'primary' : 'linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%)'}
+            sx={{ 
+              flex: 1,
+              '&:hover': {
+                transform: 'scale(1.05)',
+                zIndex: 1
+              }
+            }}
+          >
+            {range.label}
+          </Button>
+        ))}
+      </ButtonGroup>
+
+      {/* Chart */}
+      <Box sx={{ height: 400, borderRadius: 2, overflow: 'hidden' }}>
+        {chartData ? (
+          <Line data={chartData} options={chartOptions} />
+        ) : (
+          <Typography>No data available for the selected range</Typography>
+        )}
+      </Box>
+    </Paper>
+  </Box>
 
         {/* General Info Section */}
         <Box ref={generalInfoRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          General Information
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2 }}>
-              <Typography variant="body1"><strong>Sector:</strong> {stockInfo.sector}</Typography>
-              <Typography variant="body1"><strong>Employees:</strong> {stockInfo.fullTimeEmployees}</Typography>
-              <Typography variant="body1"><strong>Description:</strong> {stockInfo.longBusinessSummary}</Typography>
-            </Paper>
+          <Grid container spacing={4}>
+            <Grid item xs={12}>
+              <StockOverviewCard stockInfo={stockInfo} />
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
-
+        </Box>
 
         {/* Ratios Section */}
         <Box ref={ratiosRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Ratios
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2 }}>
-              {/* Ratios 
-                  - We display the ratios if they are not null
-              */}
-              {stockInfo.beta && <Typography variant="body1"><strong>Beta:</strong> {stockInfo.beta}</Typography>}
-              {stockInfo.trailingPE && <Typography variant="body1"><strong>Trailing PE:</strong> {stockInfo.trailingPE}</Typography>}
-              {stockInfo.forwardPE && <Typography variant="body1"><strong>Forward PE:</strong> {stockInfo.forwardPE}</Typography>}
-              {stockInfo.priceToSalesTrailing12Months && <Typography variant="body1"><strong>Price to Sales:</strong> {stockInfo.priceToSalesTrailing12Months}</Typography>}
-              {stockInfo.profitMargins && <Typography variant="body1"><strong>Profit Margins:</strong> {stockInfo.profitMargins}</Typography>}
-              {stockInfo.bookValue && <Typography variant="body1"><strong>Book Value:</strong> {stockInfo.bookValue}</Typography>}
-              {stockInfo.priceToBook && <Typography variant="body1"><strong>Price to Book:</strong> {stockInfo.priceToBook}</Typography>}
-              {stockInfo.trailingEps && <Typography variant="body1"><strong>Trailing EPS:</strong> {stockInfo.trailingEps}</Typography>}
-              {stockInfo.forwardEps && <Typography variant="body1"><strong>Forward EPS:</strong> {stockInfo.forwardEps}</Typography>}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
+          <FinancialRatiosCard stockInfo={stockInfo} />
+        </Box>
 
-        {/* Price Section */}
+        {/* Price Details Section */}
         <Box ref={priceRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Price Details
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2 }}>
-              {/*
-                - We display the ratios if they are not null
-              */
-              }
-              {stockInfo.regularMarketPreviousClose && <Typography variant="body1"><strong>Previous Close:</strong> {stockInfo.regularMarketPreviousClose}</Typography>}
-              {stockInfo.fiftyTwoWeekLow && <Typography variant="body1"><strong>52 Week Low:</strong> {stockInfo.fiftyTwoWeekLow}</Typography>}
-              {stockInfo.fiftyTwoWeekHigh && <Typography variant="body1"><strong>52 Week High:</strong> {stockInfo.fiftyTwoWeekHigh}</Typography>}
-              {stockInfo.fiftyDayAverage && <Typography variant="body1"><strong>50 Day Avg:</strong> {stockInfo.fiftyDayAverage}</Typography>}
-              {stockInfo.twoHundredDayAverage && <Typography variant="body1"><strong>200 Day Avg:</strong> {stockInfo.twoHundredDayAverage}</Typography>}
-              {stockInfo['52WeekChange'] && <Typography variant="body1"><strong>52 Week Change:</strong> {stockInfo['52WeekChange']}</Typography>}
-              {stockInfo.targetHighPrice && <Typography variant="body1"><strong>Target High:</strong> {stockInfo.targetHighPrice}</Typography>}
-              {stockInfo.targetLowPrice && <Typography variant="body1"><strong>Target Low:</strong> {stockInfo.targetLowPrice}</Typography>}
-              {stockInfo.targetMeanPrice && <Typography variant="body1"><strong>Mean Target:</strong> {stockInfo.targetMeanPrice}</Typography>}
-              {stockInfo.numberOfAnalystOpinions && <Typography variant="body1"><strong>Analyst Opinions:</strong> {stockInfo.numberOfAnalystOpinions}</Typography>}
-              {stockInfo.recommendationKey && <Typography variant="body1"><strong>Recommendation:</strong> {stockInfo.recommendationKey}</Typography>}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-
-        {/* Debt Ratios Section */}
-        <Box ref={debtRatiosRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Debt Ratios
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2  }}>
-              {
-                /*
-                  Display them if they are not null
-                */
-              }
-              {stockInfo.totalDebt && <Typography variant="body1"><strong>Total Debt:</strong> {stockInfo.totalDebt}</Typography>}
-              {stockInfo.quickRatio && <Typography variant="body1"><strong>Quick Ratio:</strong> {stockInfo.quickRatio}</Typography>}
-              {stockInfo.currentRatio && <Typography variant="body1"><strong>Current Ratio:</strong> {stockInfo.currentRatio}</Typography>}
-              {stockInfo.debtToEquity && <Typography variant="body1"><strong>Debt to Equity:</strong> {stockInfo.debtToEquity}</Typography>}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-
-        {/* Financial Charts Section */}
-        <Box ref={chartsRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-            Financial Charts
-          </Typography>
-        <Grid container spacing={4}>
-          {revenueChartData && (
-            <Grid item xs={12} md={6}>
-              <Paper elevation={3} sx={{ padding: 2 }}>
-                <BarChart title="Revenue per Quarter" data={revenueChartData} unit="TL" />
-              </Paper>
-            </Grid>
-          )}
-          {operatingIncomeChartData && (
-            <Grid item xs={12} md={6}>
-              <Paper elevation={3} sx={{ padding: 2 }}>
-                <BarChart title="Operating Income per Quarter" data={operatingIncomeChartData} unit="TL" />
-              </Paper>
-            </Grid>
-          )}
-            {operatingMarginChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Operating Margin per Quarter" data={operatingMarginChartData} unit="%" />
-                </Paper>
-                </Grid>
-            )}
-            {grossProfitChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Gross Profit per Quarter" data={grossProfitChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {netProfitChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Net Profit per Quarter" data={netProfitChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-        </Grid>
-      </Box>
+          <StockPriceDetailsCard stockInfo={stockInfo} />
+        </Box>
 
 
-      <Box ref={balanceSheetRef} sx={{ my: 4 }}>
-      <Typography variant="h5" gutterBottom>
-          Balance Sheet Charts  
-          </Typography>
-        <Grid container spacing={4}>
-            {/* Balance Sheet Section */}
-            {totalAssetsChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Total Assets per Quarter" data={totalAssetsChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {totalLiabilitiesChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Total Liabilities per Quarter" data={totalLiabilitiesChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {totalEquityChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Total Equity per Quarter" data={totalEquityChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {currentAssetsChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Current Assets per Quarter" data={currentAssetsChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {currentLiabilitiesChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Current Liabilities per Quarter" data={currentLiabilitiesChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-        </Grid>
-      </Box>
-
-            
-            {/* Cash Flow Section */}
-        <Box ref={cashFlowRef} sx={{ my: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Cash Flow Charts
-          </Typography>
-        <Grid container spacing={4}>
-            {freeCashFlowChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Free Cash Flow per Quarter" data={freeCashFlowChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-        </Grid>
-      </Box>
+      {/* Financial Charts Section */}
+      <FinancialChartsSection
+        revenueChartData={revenueChartData}
+        operatingIncomeChartData={operatingIncomeChartData}
+        operatingMarginChartData={operatingMarginChartData}
+        grossProfitChartData={grossProfitChartData}
+        netProfitChartData={netProfitChartData}
+        totalAssetsChartData={totalAssetsChartData}
+        totalLiabilitiesChartData={totalLiabilitiesChartData}
+        totalEquityChartData={totalEquityChartData}
+        currentAssetsChartData={currentAssetsChartData}
+        currentLiabilitiesChartData={currentLiabilitiesChartData}
+        freeCashFlowChartData={freeCashFlowChartData}
+      />
 
       {/* News Section */}
       <Box sx={{ my: 4 }}>
