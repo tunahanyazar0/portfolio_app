@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Box, CircularProgress, Grid, Paper, ListItemText, ListItem, List, IconButton, Drawer } from '@mui/material';
+import { Container, Typography, Box, CircularProgress, Grid, Paper, ListItemText, ListItem, Chip, List, IconButton, Drawer, Button, ButtonGroup } from '@mui/material';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { useParams } from 'react-router-dom';
@@ -8,7 +8,13 @@ import BarChart from '../components/BarChart';
 import Sidebar from '../components/Sidebar';
 import { useRef } from 'react';
 import newsService from '../services/newsService';
+
+// Import the components
 import NewsSection from '../components/NewsSection';
+import StockOverviewCard from '../components/StockOverviewCard';
+import FinancialRatiosCard from '../components/FinancialRatiosCard';
+import StockPriceDetailsCard from '../components/StockPriceDetailsCard';
+import FinancialChartsSection from '../components/FinancialChartsSection';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -516,215 +522,122 @@ const StockPage = () => {
 
 
       {/* Stock Price Section */}
-      <Box ref={priceInfoRef} sx={{ my: 4 }}>
-        <Paper elevation={3} sx={{ padding: 2, marginBottom: 4 }}>
-            <Typography variant="h4" component="h1" gutterBottom>
-              {stock.name} ({stock.stock_symbol}) - {price} TL
-            </Typography>
-            <Box sx={{ height: 400 }}>
-              {chartData ? <Line options={chartOptions} data={chartData} /> : <Typography>No data available</Typography>}
-            </Box>
-          </Paper>
+<Box ref={priceInfoRef} sx={{ my: 4 }}>
+  <Paper 
+    elevation={4} 
+    sx={{ 
+      padding: 3, 
+      marginBottom: 4, 
+      background: 'linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%)',
+      position: 'relative',
+      overflow: 'hidden'
+    }}
+  >
+    {/* Stock Header with Price */}
+    <Box sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        mb: 3 
+      }}>
+        <Box>
+          <Typography 
+            variant="h4" 
+            component="h1" 
+            sx={{ 
+              fontWeight: 'bold', 
+              color: 'primary.main' 
+            }}
+          >
+            {stock.name} ({stock.stock_symbol})
+          </Typography>
+          <Typography 
+            variant="h5" 
+            sx={{ 
+              color: 'text.secondary', 
+              fontWeight: 'medium' 
+            }}
+          >
+            Current Price: {price} TL
+          </Typography>
+        </Box>
+        <Chip 
+          label={`Last Updated: ${new Date().toLocaleDateString()}`} 
+          color="primary" 
+          variant="outlined" 
+        />
       </Box>
 
+      {/* Date Range Buttons */}
+      <ButtonGroup
+        variant="contained"
+        fullWidth
+        sx={{ mb: 3 }}
+        aria-label="Date range selection"
+      >
+        {dateRanges.map((range) => (
+          <Button
+            key={range.value}
+            onClick={() => setDateRange(range.value)}
+            color={dateRange === range.value ? 'primary' : 'linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%)'}
+            sx={{ 
+              flex: 1,
+              '&:hover': {
+                transform: 'scale(1.05)',
+                zIndex: 1
+              }
+            }}
+          >
+            {range.label}
+          </Button>
+        ))}
+      </ButtonGroup>
+
+      {/* Chart */}
+      <Box sx={{ height: 400, borderRadius: 2, overflow: 'hidden' }}>
+        {chartData ? (
+          <Line data={chartData} options={chartOptions} />
+        ) : (
+          <Typography>No data available for the selected range</Typography>
+        )}
+      </Box>
+    </Paper>
+  </Box>
 
         {/* General Info Section */}
         <Box ref={generalInfoRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          General Information
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2 }}>
-              <Typography variant="body1"><strong>Sector:</strong> {stockInfo.sector}</Typography>
-              <Typography variant="body1"><strong>Employees:</strong> {stockInfo.fullTimeEmployees}</Typography>
-              <Typography variant="body1"><strong>Description:</strong> {stockInfo.longBusinessSummary}</Typography>
-            </Paper>
+          <Grid container spacing={4}>
+            <Grid item xs={12}>
+              <StockOverviewCard stockInfo={stockInfo} />
+            </Grid>
           </Grid>
-        </Grid>
-      </Box>
-
+        </Box>
 
         {/* Ratios Section */}
         <Box ref={ratiosRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Ratios
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2 }}>
-              {/* Ratios 
-                  - We display the ratios if they are not null
-              */}
-              {stockInfo.beta && <Typography variant="body1"><strong>Beta:</strong> {stockInfo.beta}</Typography>}
-              {stockInfo.trailingPE && <Typography variant="body1"><strong>Trailing PE:</strong> {stockInfo.trailingPE}</Typography>}
-              {stockInfo.forwardPE && <Typography variant="body1"><strong>Forward PE:</strong> {stockInfo.forwardPE}</Typography>}
-              {stockInfo.priceToSalesTrailing12Months && <Typography variant="body1"><strong>Price to Sales:</strong> {stockInfo.priceToSalesTrailing12Months}</Typography>}
-              {stockInfo.profitMargins && <Typography variant="body1"><strong>Profit Margins:</strong> {stockInfo.profitMargins}</Typography>}
-              {stockInfo.bookValue && <Typography variant="body1"><strong>Book Value:</strong> {stockInfo.bookValue}</Typography>}
-              {stockInfo.priceToBook && <Typography variant="body1"><strong>Price to Book:</strong> {stockInfo.priceToBook}</Typography>}
-              {stockInfo.trailingEps && <Typography variant="body1"><strong>Trailing EPS:</strong> {stockInfo.trailingEps}</Typography>}
-              {stockInfo.forwardEps && <Typography variant="body1"><strong>Forward EPS:</strong> {stockInfo.forwardEps}</Typography>}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
+          <FinancialRatiosCard stockInfo={stockInfo} />
+        </Box>
 
-        {/* Price Section */}
+        {/* Price Details Section */}
         <Box ref={priceRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Price Details
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2 }}>
-              {/*
-                - We display the ratios if they are not null
-              */
-              }
-              {stockInfo.regularMarketPreviousClose && <Typography variant="body1"><strong>Previous Close:</strong> {stockInfo.regularMarketPreviousClose}</Typography>}
-              {stockInfo.fiftyTwoWeekLow && <Typography variant="body1"><strong>52 Week Low:</strong> {stockInfo.fiftyTwoWeekLow}</Typography>}
-              {stockInfo.fiftyTwoWeekHigh && <Typography variant="body1"><strong>52 Week High:</strong> {stockInfo.fiftyTwoWeekHigh}</Typography>}
-              {stockInfo.fiftyDayAverage && <Typography variant="body1"><strong>50 Day Avg:</strong> {stockInfo.fiftyDayAverage}</Typography>}
-              {stockInfo.twoHundredDayAverage && <Typography variant="body1"><strong>200 Day Avg:</strong> {stockInfo.twoHundredDayAverage}</Typography>}
-              {stockInfo['52WeekChange'] && <Typography variant="body1"><strong>52 Week Change:</strong> {stockInfo['52WeekChange']}</Typography>}
-              {stockInfo.targetHighPrice && <Typography variant="body1"><strong>Target High:</strong> {stockInfo.targetHighPrice}</Typography>}
-              {stockInfo.targetLowPrice && <Typography variant="body1"><strong>Target Low:</strong> {stockInfo.targetLowPrice}</Typography>}
-              {stockInfo.targetMeanPrice && <Typography variant="body1"><strong>Mean Target:</strong> {stockInfo.targetMeanPrice}</Typography>}
-              {stockInfo.numberOfAnalystOpinions && <Typography variant="body1"><strong>Analyst Opinions:</strong> {stockInfo.numberOfAnalystOpinions}</Typography>}
-              {stockInfo.recommendationKey && <Typography variant="body1"><strong>Recommendation:</strong> {stockInfo.recommendationKey}</Typography>}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-
-        {/* Debt Ratios Section */}
-        <Box ref={debtRatiosRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Debt Ratios
-        </Typography>
-        <Grid container spacing={4} sx={{ mb: 4 }}>
-          <Grid item xs={12}>
-            <Paper elevation={3} sx={{ p: 2  }}>
-              {
-                /*
-                  Display them if they are not null
-                */
-              }
-              {stockInfo.totalDebt && <Typography variant="body1"><strong>Total Debt:</strong> {stockInfo.totalDebt}</Typography>}
-              {stockInfo.quickRatio && <Typography variant="body1"><strong>Quick Ratio:</strong> {stockInfo.quickRatio}</Typography>}
-              {stockInfo.currentRatio && <Typography variant="body1"><strong>Current Ratio:</strong> {stockInfo.currentRatio}</Typography>}
-              {stockInfo.debtToEquity && <Typography variant="body1"><strong>Debt to Equity:</strong> {stockInfo.debtToEquity}</Typography>}
-            </Paper>
-          </Grid>
-        </Grid>
-      </Box>
-
-        {/* Financial Charts Section */}
-        <Box ref={chartsRef} sx={{ my: 4 }}>
-        <Typography variant="h5" gutterBottom>
-            Financial Charts
-          </Typography>
-        <Grid container spacing={4}>
-          {revenueChartData && (
-            <Grid item xs={12} md={6}>
-              <Paper elevation={3} sx={{ padding: 2 }}>
-                <BarChart title="Revenue per Quarter" data={revenueChartData} unit="TL" />
-              </Paper>
-            </Grid>
-          )}
-          {operatingIncomeChartData && (
-            <Grid item xs={12} md={6}>
-              <Paper elevation={3} sx={{ padding: 2 }}>
-                <BarChart title="Operating Income per Quarter" data={operatingIncomeChartData} unit="TL" />
-              </Paper>
-            </Grid>
-          )}
-            {operatingMarginChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Operating Margin per Quarter" data={operatingMarginChartData} unit="%" />
-                </Paper>
-                </Grid>
-            )}
-            {grossProfitChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Gross Profit per Quarter" data={grossProfitChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {netProfitChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Net Profit per Quarter" data={netProfitChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-        </Grid>
-      </Box>
+          <StockPriceDetailsCard stockInfo={stockInfo} />
+        </Box>
 
 
-      <Box ref={balanceSheetRef} sx={{ my: 4 }}>
-      <Typography variant="h5" gutterBottom>
-          Balance Sheet Charts  
-          </Typography>
-        <Grid container spacing={4}>
-            {/* Balance Sheet Section */}
-            {totalAssetsChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Total Assets per Quarter" data={totalAssetsChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {totalLiabilitiesChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Total Liabilities per Quarter" data={totalLiabilitiesChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {totalEquityChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Total Equity per Quarter" data={totalEquityChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {currentAssetsChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Current Assets per Quarter" data={currentAssetsChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-            {currentLiabilitiesChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Current Liabilities per Quarter" data={currentLiabilitiesChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-        </Grid>
-      </Box>
-
-            
-            {/* Cash Flow Section */}
-        <Box ref={cashFlowRef} sx={{ my: 4 }}>
-          <Typography variant="h5" gutterBottom>
-            Cash Flow Charts
-          </Typography>
-        <Grid container spacing={4}>
-            {freeCashFlowChartData && (
-                <Grid item xs={12} md={6}>
-                <Paper elevation={3} sx={{ padding: 2 }}>
-                    <BarChart title="Free Cash Flow per Quarter" data={freeCashFlowChartData} unit="TL" />
-                </Paper>
-                </Grid>
-            )}
-        </Grid>
-      </Box>
+      {/* Financial Charts Section */}
+      <FinancialChartsSection
+        revenueChartData={revenueChartData}
+        operatingIncomeChartData={operatingIncomeChartData}
+        operatingMarginChartData={operatingMarginChartData}
+        grossProfitChartData={grossProfitChartData}
+        netProfitChartData={netProfitChartData}
+        totalAssetsChartData={totalAssetsChartData}
+        totalLiabilitiesChartData={totalLiabilitiesChartData}
+        totalEquityChartData={totalEquityChartData}
+        currentAssetsChartData={currentAssetsChartData}
+        currentLiabilitiesChartData={currentLiabilitiesChartData}
+        freeCashFlowChartData={freeCashFlowChartData}
+      />
 
       {/* News Section */}
       <Box sx={{ my: 4 }}>

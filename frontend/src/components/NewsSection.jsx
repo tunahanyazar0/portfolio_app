@@ -12,10 +12,23 @@ import {
 } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
 
-const NewsSection = ({ news, loading = false }) => {
-    const [showMore, setShowMore] = useState(false); 
+const NewsSection = ({ news, loading = false }) => { 
+    // state variable to show more news
+    const [showMore, setShowMore] = useState(false);
 
+    // if news is null, return a jsx element with a message
+    if(!news || news.length === 0) {
+        return (
+            <Box display="flex" justifyContent="center" alignItems="center" height={300}>
+                <Typography variant="h6" color="textSecondary">
+                    No news available at the moment.
+                </Typography>
+            </Box>
+            );
+    }
+    // if news is not empty, proceed to display the news   
     const visibleNews = showMore ? news : news.slice(0, 3);
+
 
     if (loading) {
         return (
