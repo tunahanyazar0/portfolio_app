@@ -20,6 +20,36 @@ const StockPage = () => {
   const [chartData, setChartData] = useState(null); // to store the stock price data for the chart
   const [loading, setLoading] = useState(true);
 
+  // hisse fiyat tablosundaki zaman aralığı seçimi
+  const [dateRange, setDateRange] = useState('1M'); // Default date range is 1 month
+  // label lerin ve value ların tanımlanması. Chart da label lar görünecek, value lar ise backend e gönderilecek
+  const dateRanges = [
+    { label: 'Last Week', value: '1W' },
+    { label: 'Last Month', value: '1M' },
+    { label: 'Year to Date', value: 'YTD' },
+    { label: 'Last Year', value: '1Y' },
+    { label: 'Last 5 Years', value: '5Y' },
+  ];
+
+  // hisse fiyat tablosundaki zaman aralığı değiştiğinde çalışacak fonksiyon
+  const getStartDate = (range) => {
+    const today = new Date();
+    switch (range) {
+      case '1W':
+        return new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
+      case '1M':
+        return new Date(today.setMonth(today.getMonth() - 1)).toISOString().split('T')[0];
+      case 'YTD':
+        return new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+      case '1Y':
+        return new Date(today.setFullYear(today.getFullYear() - 1)).toISOString().split('T')[0];
+      case '5Y':
+        return new Date(today.setFullYear(today.getFullYear() - 5)).toISOString().split('T')[0];
+      default:
+        return new Date(today.setMonth(today.getMonth() - 1)).toISOString().split('T')[0];
+    }
+  };
+
   // income statement related 
   const [revenueChartData, setRevenueChartData] = useState(null);
   const [operatingIncomeChartData, setOperatingIncomeChartData] = useState(null);
@@ -124,6 +154,7 @@ const StockPage = () => {
         const priceData = await stockService.getStockPrice(symbol);
         setPrice(priceData.close_price);
 
+        /*
         // Fetch price data for the chart
         const priceResponse = await stockService.getStockPriceInDateRange({
           stock_symbol: symbol,
@@ -138,7 +169,7 @@ const StockPage = () => {
         const labels = priceResponse.map(price => price.date);
         const data = priceResponse.map(price => price.close_price);
 
-        /*
+        
         example priceResponse:
         [
           {"stock_symbol": "AGHOL",
@@ -151,7 +182,7 @@ const StockPage = () => {
             "date":"2024-06-05
             ,"close_price":null}
     ]
-        */
+        
 
         // we need to reverse them to make the recent one to the right
         labels.reverse();
@@ -170,6 +201,7 @@ const StockPage = () => {
             },
           ],
         });
+        */
 
         // Fetch financial data for the stock
         const financialData = await stockService.getFinancialData(stock.stock_symbol);
@@ -329,7 +361,73 @@ const StockPage = () => {
     };
 
     fetchStockData();
-  }, [symbol]);
+  }, [symbol]); // symbol değiştikçe çalışacak operationlar : inside the fetchStockData function
+
+
+  // Stock price chart date range options 
+  const fetchChartData = async (range) => {
+    try {
+      // range is one of the : 1W, 1M, YTD, 1Y, 5Y
+      const startDate = getStartDate(range); // get the start date for the selected range
+      const endDate = new Date().toISOString().split('T')[0]; // get the end date as today
+
+      // Fetch price data for the chart by giving the suitable range
+      const priceResponse = await stockService.getStockPriceInDateRange({
+        stock_symbol: symbol,
+        start_date: startDate,
+        end_date: endDate,
+      });
+
+      // we need to reverse the data to make the recent one to the right
+      const labels = priceResponse.map((price) => price.date);
+      const data = priceResponse.map((price) => price.close_price);
+
+      // chart data state variable ının güncellenmesi
+      setChartData({
+        labels,
+        datasets: [
+          {
+            label: `${stock?.name || symbol} Stock Price`,
+            data,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          },
+        ],
+      });
+    } catch (error) {
+      console.error('Error fetching chart data:', error);
+    }
+  };
+
+  // above function will be called in an use effect which will be triggered when the date range changes or stock symbol changes
+  useEffect(() => {
+    const fetchStockData = async () => {
+      try {
+        const stock = await stockService.getStock(symbol);
+        if (!stock) {
+          setStock(null);
+          setLoading(false);
+          return;
+        }
+        setStock(stock);
+        
+        const priceData = await stockService.getStockPrice(symbol);
+        setPrice(priceData.close_price);
+
+        // Fetch default chart data for the initial date range
+        fetchChartData(dateRange);
+      } catch (error) {
+        console.error('Error fetching stock data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStockData();
+  }, [symbol, dateRange]);
+
 
   const chartOptions = {
     responsive: true,
