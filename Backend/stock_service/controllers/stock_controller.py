@@ -113,6 +113,7 @@ def get_all_stocks(db: Session = Depends(get_db)):
     service = StockService(db)
     return service.get_all_stocks()
 
+
 # To get general info about a stock using yahoo finance
 """
 example input: http://localhost:8001/api/stocks/AAPL/info
@@ -184,6 +185,26 @@ example output:
 def get_stock_prices(request: StockPriceInRangeRequest, db: Session = Depends(get_db)):
     stock_service = StockService(db)
     prices = stock_service.get_stock_price_in_range(request.stock_symbol, request.start_date, request.end_date)
+    
+    # Convert date to string
+    response = [
+        StockPriceResponse(
+            stock_symbol=price.stock_symbol,
+            date=price.date.isoformat(),  # Convert date to string
+            close_price=price.close_price
+        )
+        for price in prices
+    ]
+    
+    return response
+
+# to get predefined dates stock prices for a given stock symbol
+@router.get("/{symbol}/prices/", response_model=List[StockPriceResponse])
+def get_predefined_stock_prices(symbol: str, db: Session = Depends(get_db)):
+    stock_service = StockService(db)
+    prices = stock_service.get_prices_of_stock_in_predefined_dates(symbol)
+    if not prices:
+        raise HTTPException(status_code=404, detail="Stock prices not found")
     
     # Convert date to string
     response = [

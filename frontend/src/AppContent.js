@@ -18,6 +18,7 @@ import PortfoliosPage from './pages/PortfoliosPage';
 import PortfolioPage from './pages/PortfolioPage';
 import AllSectorsPage from './pages/AllSectorsPage';
 import SectorPage from './pages/SectorPage';
+import NewStocksPage from './pages/NewAllStocksPage';
 
 // navbars are seen in all of the pages if the user is authenticated
 // if the user is not authenticated, the user is redirected to the login page
@@ -108,6 +109,15 @@ function AppContent() {
                   <SectorPage />
                 </PrivateRoute>
               }
+            />
+
+            <Route
+              path="/new-stocks"
+              element = {
+                <PrivateRoute>
+                  <NewStocksPage />
+                </PrivateRoute>
+              } 
             />
             
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
