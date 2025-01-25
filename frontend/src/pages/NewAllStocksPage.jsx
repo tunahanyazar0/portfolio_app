@@ -1,36 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogActions,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  CircularProgress
-} from '@mui/material';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Box, Typography, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, CircularProgress } from '@mui/material';
+import { styled } from '@mui/system';
 import stockService from '../services/stockService';
+
+const StyledTable = styled(Table)(({ theme }) => ({
+  '& .MuiTableCell-root': {
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
+    padding: '12px 16px'
+  },
+  '& .MuiTableHead-root': {
+    backgroundColor: theme.palette.grey[100]
+  }
+}));
 
 const NewStocksPage = () => {
     // all stocks are fetched from the backend and stored in the state 
     const [stocks, setStocks] = useState([]);
     // filteredStocks state is used to store the stocks that meet the filter criteria
     const [filteredStocks, setFilteredStocks] = useState([]);
+    
     // loading state is used to show a loading spinner while fetching data
     const [loading, setLoading] = useState(true);
     // searchQuery state is used to store the search query entered by the user
     const [searchQuery, setSearchQuery] = useState('');
     // openFiltersDialog state is used to control the visibility of the filters dialog
     const [openFiltersDialog, setOpenFiltersDialog] = useState(false);
+    // sortColumn state is used to store the column that the stocks are sorted by
+    const [sortColumn, setSortColumn] = useState(null);
+    // sortDirection state is used to store the direction of the sort
+    const [sortDirection, setSortDirection] = useState(null);
     
     // filters state is used to store the filter criteria entered by the user
     const [filters, setFilters] = useState({
@@ -78,201 +76,6 @@ const NewStocksPage = () => {
             // fetch all stocks with detailed information
             const allStocks = await stockService.getAllStocksDetailed();
 
-            /*
-                each stock is sth like this:
-                {
-  "address1": "Fatih Sultan Mehmet Mahallesi, Kat 6",
-  "address2": "Balkan Caddesi No. 58 Buyaka E Blok TepeUestUe Uemraniye",
-  "city": "Istanbul",
-  "zip": "34771",
-  "country": "Turkey",
-  "phone": "90 216 578 85 00",
-  "fax": "90 216 573 74 52",
-  "website": "https://www.anadolugrubu.com.tr",
-  "industry": "Conglomerates",
-  "industryKey": "conglomerates",
-  "industryDisp": "Conglomerates",
-  "sector": "Industrials",
-  "sectorKey": "industrials",
-  "sectorDisp": "Industrials",
-  "longBusinessSummary": "AG Anadolu Grubu Holding A.S., together with its subsidiaries, engages in the beer, soft drinks, automotive, and other businesses in Turkey and internationally. The company operates through Beer, Soft Drinks, Migros, Automotive, Agriculture, Energy, and Industry, and Other segments. It also produces and sells beer and malt, and carbonated and non-carbonated beverages; and involved in passenger and commercial vehicles business. In addition, the company imports, distributes, markets, and rents motor vehicles; and engages in generators, and spares and component part activities. Further, it is involved in the production of industrial engines; sale of tractors; production of writing instruments; distribution of other imported stationery products; wholesale and retail sale of electricity, insurance agency business; and production, distribution, and transmission of electricity businesses, as well as operates distribution facilities; and provision of IT, internet, and e-commerce services. Additionally, the company purchases, sells, rents, and manages real estate properties; and leases intellectual property. AG Anadolu Grubu Holding A.S. was formerly known as Yazicilar Holding A.S. and changed its name to AG Anadolu Grubu Holding A.S. in December 2017. The company was founded in 1950 and is based in Istanbul, Turkey.",
-  "fullTimeEmployees": 71587,
-  "companyOfficers": [
-    {
-      "maxAge": 1,
-      "name": "Mr. Burak  Basarir",
-      "title": "Chief Executive Officer",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Onur  Çevikel",
-      "title": "Chief Financial Officer",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Serkant  Paker",
-      "title": "Chief Information Officer",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Mehmet  Colakoglu C.F.A.",
-      "title": "Corporate Governance and Investor Relations Director",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Mustafa  Yelligedik",
-      "title": "Legal Affairs President",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Atilla D. Yerlikaya",
-      "title": "Head of Corporate Relations, Communications & Sustainability",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Osman  Alptürer",
-      "age": 57,
-      "title": "Human Resources President",
-      "yearBorn": 1967,
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Mentes  Albayrak",
-      "title": "Head of Audit",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Bora  Koçak",
-      "age": 55,
-      "title": "Automotive Group President",
-      "yearBorn": 1969,
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    },
-    {
-      "maxAge": 1,
-      "name": "Mr. Demir  Sarman",
-      "title": "President of Agriculture, Energy & Industry Group",
-      "exercisedValue": 0,
-      "unexercisedValue": 0
-    }
-  ],
-  "maxAge": 86400,
-  "priceHint": 2,
-  "previousClose": 313.25,
-  "open": 313.5,
-  "dayLow": 311.5,
-  "dayHigh": 317,
-  "regularMarketPreviousClose": 313.25,
-  "regularMarketOpen": 313.5,
-  "regularMarketDayLow": 311.5,
-  "regularMarketDayHigh": 317,
-  "dividendRate": 2.87,
-  "dividendYield": 0.0091,
-  "exDividendDate": 1716940800,
-  "payoutRatio": 0.116000004,
-  "fiveYearAvgDividendYield": 0.94,
-  "beta": 0.206,
-  "trailingPE": 12.722133,
-  "forwardPE": 2.0841603,
-  "volume": 606892,
-  "regularMarketVolume": 606892,
-  "averageVolume": 827643,
-  "averageVolume10days": 776644,
-  "averageDailyVolume10Day": 776644,
-  "bid": 314.5,
-  "ask": 314,
-  "marketCap": 76713525248,
-  "fiftyTwoWeekLow": 227.5,
-  "fiftyTwoWeekHigh": 477.5,
-  "priceToSalesTrailing12Months": 0.19654344,
-  "fiftyDayAverage": 334.585,
-  "twoHundredDayAverage": 342.1325,
-  "currency": "TRY",
-  "enterpriseValue": 258303164416,
-  "profitMargins": 0.01544,
-  "floatShares": 76352957,
-  "sharesOutstanding": 243535008,
-  "heldPercentInsiders": 0.53755003,
-  "heldPercentInstitutions": 0.13204001,
-  "impliedSharesOutstanding": 247848000,
-  "bookValue": 367.557,
-  "priceToBook": 0.8570099,
-  "lastFiscalYearEnd": 1703980800,
-  "nextFiscalYearEnd": 1735603200,
-  "mostRecentQuarter": 1727654400,
-  "earningsQuarterlyGrowth": -0.239,
-  "netIncomeToCommon": 6016836096,
-  "trailingEps": 24.76,
-  "forwardEps": 151.14,
-  "lastSplitFactor": "130:100",
-  "lastSplitDate": 1171238400,
-  "enterpriseToRevenue": 0.662,
-  "enterpriseToEbitda": 10.56,
-  "52WeekChange": 0.3478819,
-  "SandP52WeekChange": 0.23809385,
-  "lastDividendValue": 2.874336,
-  "lastDividendDate": 1716940800,
-  "exchange": "IST",
-  "quoteType": "EQUITY",
-  "symbol": "AGHOL.IS",
-  "underlyingSymbol": "AGHOL.IS",
-  "shortName": "ANADOLU GRUBU HOLDING",
-  "longName": "AG Anadolu Grubu Holding A.S.",
-  "firstTradeDateEpochUtc": 957940200,
-  "timeZoneFullName": "Europe/Istanbul",
-  "timeZoneShortName": "TRT",
-  "uuid": "7c88d8eb-7086-33ec-b5e8-417838d9c214",
-  "messageBoardId": "finmb_6523430",
-  "gmtOffSetMilliseconds": 10800000,
-  "currentPrice": 315,
-  "targetHighPrice": 554,
-  "targetLowPrice": 486.83,
-  "targetMeanPrice": 520.415,
-  "targetMedianPrice": 520.415,
-  "recommendationMean": 1,
-  "recommendationKey": "strong_buy",
-  "numberOfAnalystOpinions": 2,
-  "totalCash": 82623127552,
-  "totalCashPerShare": 339.267,
-  "ebitda": 24459929600,
-  "totalDebt": 108534816768,
-  "quickRatio": 0.656,
-  "currentRatio": 1.069,
-  "totalRevenue": 390313345024,
-  "debtToEquity": 44.265,
-  "revenuePerShare": 1605.42,
-  "returnOnAssets": 0.0207,
-  "returnOnEquity": 0.13712,
-  "grossProfits": 109019947008,
-  "freeCashflow": 636330112,
-  "operatingCashflow": 35237277696,
-  "earningsGrowth": -0.239,
-  "revenueGrowth": 0.438,
-  "grossMargins": 0.27931,
-  "ebitdaMargins": 0.06267,
-  "operatingMargins": 0.06564,
-  "financialCurrency": "TRY",
-  "trailingPegRatio": null
-}
-
-            */
 
             // to all stocks, add the price information for the last 5 years
             // and also, calculate the market cap and the percentage change for the last 5 years add these as keywords to the stock object
@@ -426,6 +229,7 @@ const NewStocksPage = () => {
     setOpenFiltersDialog(false); // close the filters dialog after applying the filters
   };
 
+  /*
   const handleSearch = (query) => {
     const filtered = stocks.filter(stock => 
       stock.stock_symbol.toLowerCase().includes(query.toLowerCase()) ||
@@ -433,60 +237,115 @@ const NewStocksPage = () => {
     );
     setFilteredStocks(filtered);
     setSearchQuery(query);
-  };
+  };*/
+
+  // Function to have a search bar to search for stocks
+  // This will filter the filteredStocks state based on the search query
+    const handleSearch = (query) => {
+        if (!query) {
+        setFilteredStocks(stocks);
+        setSearchQuery(query);
+        return;
+        }
+        if (filteredStocks.length === 0) return;
+        const filtered = filteredStocks.filter(stock =>
+        stock.stock_symbol.toLowerCase().includes(query.toLowerCase())
+        );
+        setFilteredStocks(filtered);
+        setSearchQuery(query);
+    };
+
+    // Function to sort the stocks based on the column
+    const handleSort = (column) => {
+        if (sortColumn === column) {
+        setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+        setSortColumn(column);
+        setSortDirection('asc');
+        }
+    };
+
+    // sort the stocks based on the sortColumn and sortDirection
+    const sortedStocks = useMemo(() => {
+        if (!sortColumn) return filteredStocks;
+        return [...filteredStocks].sort((a, b) => {
+          if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1;
+          if (a[sortColumn] > b[sortColumn]) return sortDirection === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }, [filteredStocks, sortColumn, sortDirection]);
 
   // stock table ı içeren jsx i döndüren fonksiyon
   const renderStockTable = () => (
     <TableContainer component={Paper}>
-      <Table>
+      <StyledTable>
         <TableHead>
           <TableRow>
-            <TableCell>Symbol</TableCell>
-            <TableCell>Current Price</TableCell>
-            <TableCell>Day Change %</TableCell>
-            <TableCell>Volume</TableCell>
-            <TableCell>Market Cap</TableCell>
-            <TableCell>1 Week %</TableCell>
-            <TableCell>1 Month %</TableCell>
-            <TableCell>3 Months %</TableCell>
-            <TableCell>1 Year %</TableCell>
-            <TableCell>3 Years %</TableCell>
-            <TableCell>5 Years %</TableCell>
+            <TableCell onClick={() => handleSort('stock_symbol')}>Symbol</TableCell>
+            <TableCell onClick={() => handleSort('currentPrice')}>Current Price</TableCell>
+            <TableCell onClick={() => handleSort('regularMarketChangePercent')}>Day Change %</TableCell>
+            <TableCell onClick={() => handleSort('regularMarketVolume')}>Volume</TableCell>
+            <TableCell onClick={() => handleSort('market_cap')}>Market Cap</TableCell>
+            <TableCell onClick={() => handleSort('prices', 7)}>1 Week %</TableCell>
+            <TableCell onClick={() => handleSort('prices', 30)}>1 Month %</TableCell>
+            <TableCell onClick={() => handleSort('prices', 90)}>3 Months %</TableCell>
+            <TableCell onClick={() => handleSort('prices', 365)}>1 Year %</TableCell>
+            <TableCell onClick={() => handleSort('prices', 3 * 365)}>3 Years %</TableCell>
+            <TableCell onClick={() => handleSort('prices', 5 * 365)}>5 Years %</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {filteredStocks.map(stock => (
-            console.log(stock),
+          {sortedStocks.map(stock => (
             <TableRow key={stock.stock_symbol}>
               <TableCell>{stock.stock_symbol}</TableCell>
               <TableCell>{stock.currentPrice?.toFixed(2)}</TableCell>
-              <TableCell>{stock.regularMarketChangePercent?.toFixed(2)}%</TableCell>
+              <TableCell style={{ color: stock.regularMarketChangePercent >= 0 ? 'green' : 'red' }}>
+                {stock.regularMarketChangePercent?.toFixed(2)}%
+              </TableCell>
               <TableCell>{stock.regularMarketVolume?.toLocaleString()}</TableCell>
-              <TableCell>{stock.market_cap?.toFixed(2)}</TableCell>
-              <TableCell>{calculatePercentageChange(stock.prices, 7).toFixed(2)}%</TableCell>
-              <TableCell>{calculatePercentageChange(stock.prices, 30).toFixed(2)}%</TableCell>
-              <TableCell>{calculatePercentageChange(stock.prices, 90).toFixed(2)}%</TableCell>
-              <TableCell>{calculatePercentageChange(stock.prices, 365).toFixed(2)}%</TableCell>
-              <TableCell>{calculatePercentageChange(stock.prices, 3*365).toFixed(2)}%</TableCell>
-              <TableCell>{calculatePercentageChange(stock.prices, 5*365).toFixed(2)}%</TableCell>
+              <TableCell>{stock.market_cap?.toLocaleString()}</TableCell>
+              <TableCell style={{ color: calculatePercentageChange(stock.prices, 7) >= 0 ? 'green' : 'red' }}>
+                {calculatePercentageChange(stock.prices, 7).toFixed(2)}%
+              </TableCell>
+              <TableCell style={{ color: calculatePercentageChange(stock.prices, 30) >= 0 ? 'green' : 'red' }}>
+                {calculatePercentageChange(stock.prices, 30).toFixed(2)}%
+              </TableCell>
+              <TableCell style={{ color: calculatePercentageChange(stock.prices, 90) >= 0 ? 'green' : 'red' }}>
+                {calculatePercentageChange(stock.prices, 90).toFixed(2)}%
+              </TableCell>
+              <TableCell style={{ color: calculatePercentageChange(stock.prices, 365) >= 0 ? 'green' : 'red' }}>
+                {calculatePercentageChange(stock.prices, 365).toFixed(2)}%
+              </TableCell>
+              <TableCell style={{ color: calculatePercentageChange(stock.prices, 3 * 365) >= 0 ? 'green' : 'red' }}>
+                {calculatePercentageChange(stock.prices, 3 * 365).toFixed(2)}%
+              </TableCell>
+              <TableCell style={{ color: calculatePercentageChange(stock.prices, 5 * 365) >= 0 ? 'green' : 'red' }}>
+                {calculatePercentageChange(stock.prices, 5 * 365).toFixed(2)}%
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+      </StyledTable>
     </TableContainer>
   );
 
     // filters dialog ı içeren jsx i döndüren fonksiyon
   const renderFiltersDialog = () => (
-    <Dialog 
-      open={openFiltersDialog} 
+    <Dialog
+      open={openFiltersDialog}
       onClose={() => setOpenFiltersDialog(false)}
       maxWidth="lg"
       fullWidth
+      PaperProps={{
+        style: {
+          background: 'linear-gradient(45deg, #2563eb, #7c3aed)'
+        }
+      }}
     >
-      <DialogTitle>Stock Filters</DialogTitle>
+      <DialogTitle style={{ color: 'white' }}>Stock Filters</DialogTitle>
       <DialogContent>
         <Grid container spacing={2}>
+
           {/* Basic Filters */}
           <Grid item xs={12}><Typography variant="h6">Basic Filters</Typography></Grid>
           <Grid item xs={6}>
@@ -525,15 +384,303 @@ const NewStocksPage = () => {
                 onChange={(e) => setFilters({...filters, maxMarketCap: Number(e.target.value) || Infinity})}
             />
             </Grid>
+            {/* Once a filter changes, change the filter variable's corresponding key */}
+            <Grid item xs={6}>
+            <TextField
+                label="Min Volume"
+                type="number"
+                fullWidth
+                value={filters.minVolume === 0 ? '' : filters.minVolume}
+                onChange={(e) => setFilters({...filters, minVolume: Number(e.target.value) || 0})}
+            />
+            </Grid> 
+            <Grid item xs={6}>
+            <TextField
+                label="Max Volume"
+                type="number"
+                fullWidth
+                value={filters.maxVolume === Infinity ? '' : filters.maxVolume}
+                onChange={(e) => setFilters({...filters, maxVolume: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
 
+            {/* Profitability Filters */}
+            <Grid item xs={12}><Typography variant="h6">Profitability Filters</Typography></Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Price to Earnings"
+                type="number"
+                fullWidth
+                value={filters.minPriceToEarnings === 0 ? '' : filters.minPriceToEarnings}
+                onChange={(e) => setFilters({...filters, minPriceToEarnings: Number(e.target.value) || 0})}
+            />
+            </Grid> 
+            <Grid item xs={6}>
+            <TextField
+                label="Max Price to Earnings"
+                type="number"
+                fullWidth
+                value={filters.maxPriceToEarnings === Infinity ? '' : filters.maxPriceToEarnings}
+                onChange={(e) => setFilters({...filters, maxPriceToEarnings: Number(e.target.value) || Infinity})}
+            />
+            </Grid> 
+            <Grid item xs={6}>
+            <TextField
+                label="Min Price to Sales"
+                type="number"
+                fullWidth
+                value={filters.minPriceToSales === -Infinity ? '' : filters.minPriceToSales}
+                onChange={(e) => setFilters({...filters, minPriceToSales: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Price to Sales"
+                type="number"
+                fullWidth
+                value={filters.maxPriceToSales === Infinity ? '' : filters.maxPriceToSales}
+                onChange={(e) => setFilters({...filters, maxPriceToSales: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Price to Book"
+                type="number"
+                fullWidth
+                value={filters.minPriceToBook === -Infinity ? '' : filters.minPriceToBook}
+                onChange={(e) => setFilters({...filters, minPriceToBook: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Price to Book"
+                type="number"
+                fullWidth
+                value={filters.maxPriceToBook === Infinity ? '' : filters.maxPriceToBook}
+                onChange={(e) => setFilters({...filters, maxPriceToBook: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Price to EBITDA"
+                type="number"
+                fullWidth
+                value={filters.minPriceToEbitda === -Infinity ? '' : filters.minPriceToEbitda}
+                onChange={(e) => setFilters({...filters, minPriceToEbitda: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Price to EBITDA"
+                type="number"
+                fullWidth
+                value={filters.maxPriceToEbitda === Infinity ? '' : filters.maxPriceToEbitda}
+                onChange={(e) => setFilters({...filters, maxPriceToEbitda: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
 
-          {/* Similar TextField components for other filter categories */}
+            {/* Margins Filters */}
+            <Grid item xs={12}><Typography variant="h6">Margins Filters</Typography></Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Net Profit Margin"
+                type="number"
+                fullWidth
+                value={filters.minNetProfitMargin === -Infinity ? '' : filters.minNetProfitMargin}
+                onChange={(e) => setFilters({...filters, minNetProfitMargin: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Net Profit Margin"
+                type="number"
+                fullWidth
+                value={filters.maxNetProfitMargin === Infinity ? '' : filters.maxNetProfitMargin}
+                onChange={(e) => setFilters({...filters, maxNetProfitMargin: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Operating Margin"
+                type="number"
+                fullWidth
+                value={filters.minOperatingMargin === -Infinity ? '' : filters.minOperatingMargin}
+                onChange={(e) => setFilters({...filters, minOperatingMargin: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Operating Margin"
+                type="number"
+                fullWidth
+                value={filters.maxOperatingMargin === Infinity ? '' : filters.maxOperatingMargin}
+                onChange={(e) => setFilters({...filters, maxOperatingMargin: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Gross Profit Margin"
+                type="number"
+                fullWidth
+                value={filters.minGrossProfitMargin === -Infinity ? '' : filters.minGrossProfitMargin}
+                onChange={(e) => setFilters({...filters, minGrossProfitMargin: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Gross Profit Margin"
+                type="number"
+                fullWidth
+                value={filters.maxGrossProfitMargin === Infinity ? '' : filters.maxGrossProfitMargin}
+                onChange={(e) => setFilters({...filters, maxGrossProfitMargin: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            
+            {/* Performance Filters */}
+            <Grid item xs={12}><Typography variant="h6">Performance Filters</Typography></Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Return on Assets"
+                type="number"
+                fullWidth
+                value={filters.minReturnOnAssets === -Infinity ? '' : filters.minReturnOnAssets}
+                onChange={(e) => setFilters({...filters, minReturnOnAssets: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Return on Assets"
+                type="number"
+                fullWidth
+                value={filters.maxReturnOnAssets === Infinity ? '' : filters.maxReturnOnAssets}
+                onChange={(e) => setFilters({...filters, maxReturnOnAssets: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Return on Equity"
+                type="number"
+                fullWidth
+                value={filters.minReturnOnEquity === -Infinity ? '' : filters.minReturnOnEquity}
+                onChange={(e) => setFilters({...filters, minReturnOnEquity: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Return on Equity"
+                type="number"
+                fullWidth
+                value={filters.maxReturnOnEquity === Infinity ? '' : filters.maxReturnOnEquity}
+                onChange={(e) => setFilters({...filters, maxReturnOnEquity: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+
+            {/* Balance Sheet Filters */}
+            <Grid item xs={12}><Typography variant="h6">Balance Sheet Filters</Typography></Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Debt to Equity"
+                type="number"
+                fullWidth
+                value={filters.minDebtToEquity === -Infinity ? '' : filters.minDebtToEquity}
+                onChange={(e) => setFilters({...filters, minDebtToEquity: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Debt to Equity"
+                type="number"
+                fullWidth
+                value={filters.maxDebtToEquity === Infinity ? '' : filters.maxDebtToEquity}
+                onChange={(e) => setFilters({...filters, maxDebtToEquity: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Current Ratio"
+                type="number"
+                fullWidth
+                value={filters.minCurrentRatio === -Infinity ? '' : filters.minCurrentRatio}
+                onChange={(e) => setFilters({...filters, minCurrentRatio: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Current Ratio"
+                type="number"
+                fullWidth
+                value={filters.maxCurrentRatio === Infinity ? '' : filters.maxCurrentRatio}
+                onChange={(e) => setFilters({...filters, maxCurrentRatio: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Min Quick Ratio"
+                type="number"
+                fullWidth
+                value={filters.minQuickRatio === -Infinity ? '' : filters.minQuickRatio}
+                onChange={(e) => setFilters({...filters, minQuickRatio: Number(e.target.value) || -Infinity})}
+            />
+            </Grid>
+            <Grid item xs={6}>
+            <TextField
+                label="Max Quick Ratio"
+                type="number"
+                fullWidth
+                value={filters.maxQuickRatio === Infinity ? '' : filters.maxQuickRatio}
+                onChange={(e) => setFilters({...filters, maxQuickRatio: Number(e.target.value) || Infinity})}
+            />
+            </Grid>
         </Grid>
+
       </DialogContent>
       <DialogActions>
+        <Button
+          onClick={() => {
+            setFilters({
+              minPrice: 0,
+              maxPrice: Infinity,
+              minMarketCap: 0,
+              maxMarketCap: Infinity,
+              minDayChange: -Infinity,
+              maxDayChange: Infinity,
+              minVolume: 0,
+              maxVolume: Infinity,
+              minPriceToEarnings: 0,
+                maxPriceToEarnings: Infinity,
+                minPriceToSales: -Infinity,
+                maxPriceToSales: Infinity,
+                minPriceToBook: -Infinity,
+                maxPriceToBook: Infinity,
+                minPriceToEbitda: -Infinity,
+                maxPriceToEbitda: Infinity,
+                minNetProfitMargin: -Infinity,
+                maxNetProfitMargin: Infinity,
+                minOperatingMargin: -Infinity,
+                maxOperatingMargin: Infinity,
+                minGrossProfitMargin: -Infinity,
+                maxGrossProfitMargin: Infinity,
+                minReturnOnAssets: -Infinity,
+                maxReturnOnAssets: Infinity,
+                minReturnOnEquity: -Infinity,
+                maxReturnOnEquity: Infinity,
+                minDebtToEquity: -Infinity,
+                maxDebtToEquity: Infinity,
+                minCurrentRatio: -Infinity,
+                maxCurrentRatio: Infinity,
+                minQuickRatio: -Infinity,
+                maxQuickRatio: Infinity,
+                minInterestCoverage: -Infinity,
+                maxInterestCoverage: Infinity
+            });
+            }
+            }
+        >
+            Clear Filters
+        </Button>
         <Button onClick={() => setOpenFiltersDialog(false)}>Cancel</Button>
         <Button onClick={applyFilters} color="primary">Apply Filters</Button>
-      </DialogActions>
+        </DialogActions>
     </Dialog>
   );
 
