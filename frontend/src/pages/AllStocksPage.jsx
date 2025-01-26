@@ -23,6 +23,9 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import stockService from '../services/stockService';
+// search iconu eklemek için search bar a
+import SearchIcon from '@mui/icons-material/Search';
+import InputAdornment from '@mui/material/InputAdornment';
 
 
 const AllStocksPage = () => {
@@ -38,6 +41,9 @@ const AllStocksPage = () => {
 
     // searchQuery state is used to store the search query entered by the user
     const [searchQuery, setSearchQuery] = useState('');
+    // Add a new state to track the original filtered stocks before search
+    const [preSearchFilteredStocks, setPreSearchFilteredStocks] = useState([]);
+
     // openFiltersDialog state is used to control the visibility of the filters dialog
     const [openFiltersDialog, setOpenFiltersDialog] = useState(false);
     const [sortColumn, setSortColumn] = useState('currentPrice');
@@ -83,38 +89,131 @@ const AllStocksPage = () => {
         maxInterestCoverage: Infinity
     });
 
-    const columns = [
-        { key: 'stock_symbol', label: 'Symbol', numeric: false },
-        { key: 'currentPrice', label: 'Price', numeric: true },
-        { key: 'regularMarketChangePercent', label: 'Day Change %', numeric: true },
-        { key: 'regularMarketVolume', label: 'Volume', numeric: true },
-        { key: 'market_cap', label: 'Market Cap', numeric: true },
-        { key: '1_week', label: '1 Week %', numeric: true },
-        { key: '1_month', label: '1 Month %', numeric: true },
-        { key: '3_months', label: '3 Months %', numeric: true },
-        { key: '1_year', label: '1 Year %', numeric: true },
-        { key: '3_years', label: '3 Years %', numeric: true },
-        { key: '5_years', label: '5 Years %', numeric: true },
-    ];
+    // this is a state variable since columns can change we user apply some filters.
+    const [columns, setColumns] = useState([
+      { key: 'stock_symbol', label: 'Symbol', numeric: false },
+      { key: 'currentPrice', label: 'Price', numeric: true },
+      { key: 'regularMarketChangePercent', label: 'Day Change %', numeric: true },
+      { key: 'regularMarketVolume', label: 'Volume', numeric: true },
+      { key: 'market_cap', label: 'Market Cap', numeric: true },
+      { key: '1_week', label: '1 Week %', numeric: true },
+      { key: '1_month', label: '1 Month %', numeric: true },
+      { key: '3_months', label: '3 Months %', numeric: true },
+      { key: '1_year', label: '1 Year %', numeric: true },
+      { key: '3_years', label: '3 Years %', numeric: true },
+      { key: '5_years', label: '5 Years %', numeric: true },
+  ]);
 
-    const formatValue = (value, key) => {
-        if (value === null || value === undefined) return 'N/A';
+  // when user plays with filters, we need to update the columns. This dictionary is used to map the columns to the keys in the stock object. 
+  const dynamicColumnMapping = {
+    minPriceToEarnings : { key: 'trailingPE', label: 'Price to Earnings', numeric: true },
+    maxPriceToEarnings : { key: 'trailingPE', label: 'Price to Earnings', numeric: true },
+    minPriceToSales : { key: 'priceToSalesTrailing12Months', label: 'Price to Sales', numeric: true },
+    maxPriceToSales : { key: 'priceToSalesTrailing12Months', label: 'Price to Sales', numeric: true },
+    minPriceToBook : { key: 'priceToBook', label: 'Price to Book', numeric: true },
+    maxPriceToBook : { key: 'priceToBook', label: 'Price to Book', numeric: true },
+    minPriceToEbitda : { key: 'enterpriseToEbitda', label: 'Price to EBITDA', numeric: true },
+    maxPriceToEbitda : { key: 'enterpriseToEbitda', label: 'Price to EBITDA', numeric: true },
+    minNetProfitMargin : { key: 'profitMargins', label: 'Net Profit Margin', numeric: true },
+    maxNetProfitMargin : { key: 'profitMargins', label: 'Net Profit Margin', numeric: true },
+    minOperatingMargin : { key: 'operatingMargins', label: 'Operating Margin', numeric: true },
+    maxOperatingMargin : { key: 'operatingMargins', label: 'Operating Margin', numeric: true },
+    minGrossProfitMargin : { key: 'grossMargins', label: 'Gross Profit Margin', numeric: true },
+    maxGrossProfitMargin : { key: 'grossMargins', label: 'Gross Profit Margin', numeric: true },
+    minReturnOnAssets : { key: 'returnOnAssets', label: 'Return on Assets', numeric: true },
+    maxReturnOnAssets : { key: 'returnOnAssets', label: 'Return on Assets', numeric: true },
+    minReturnOnEquity : { key: 'returnOnEquity', label: 'Return on Equity', numeric: true },
+    maxReturnOnEquity : { key: 'returnOnEquity', label: 'Return on Equity', numeric: true },
+    minDebtToEquity : { key: 'debtToEquity', label: 'Debt to Equity', numeric: true },
+    maxDebtToEquity : { key: 'debtToEquity', label: 'Debt to Equity', numeric: true },
+    minCurrentRatio : { key: 'currentRatio', label: 'Current Ratio', numeric: true },
+    maxCurrentRatio : { key: 'currentRatio', label: 'Current Ratio', numeric: true },
+    minQuickRatio : { key: 'quickRatio', label: 'Quick Ratio', numeric: true },
+    maxQuickRatio : { key: 'quickRatio', label: 'Quick Ratio', numeric: true },
+    minInterestCoverage : { key: 'interestCoverage', label: 'Interest Coverage', numeric: true },
+    maxInterestCoverage : { key: 'interestCoverage', label: 'Interest Coverage', numeric: true }
+};
+
+// Function to add a dynamic column to the table based on the filter key
+  const addDynamicColumn = (filterKey) => {
+    // check if the dynamicColumnMapping or filterKey is null
+    if (!dynamicColumnMapping || !filterKey) return;
+
+    // get the new column from the dynamicColumnMapping
+    const newColumn = dynamicColumnMapping[filterKey];
+    if (!newColumn) return;
     
-        // Check if value is a number before calling toFixed
-        const numValue = Number(value);
+    const baseColumns = ['stock_symbol', 'currentPrice', 'regularMarketChangePercent', 'regularMarketVolume', 'market_cap'];
+
+    // check if the column already exists in the columns array
+    // diyelim önceden min haliyle bir column eklenmiş, şimdi max hali eklenmek isteniyor. Bu case de bu true olucak ve eklemeyi önleyecek.
+    const columnExists = columns && columns.some(col => col?.key === newColumn.key);
+
+    // Check if the new column is not null and it does not exist in the columns array and it is not one of the base columns
+    if (newColumn && !columnExists && !baseColumns.includes(newColumn.key)) {
+        const insertIndex = columns.findIndex(col => col.key === '1_week');
         
-        if (isNaN(numValue)) return value.toString();
+        // Ensure insertIndex is valid
+        const updatedColumns = [...columns];
+        if (insertIndex !== -1) {
+          // insert the new column at the correct index (insert before the 1_week column) 
+            updatedColumns.splice(insertIndex, 0, newColumn);
+            setColumns(updatedColumns);
+        }
+    }
+  };
+
+
+  // Function to remove a dynamic column from the table based on the filter key 
+  // bir filter çıkartılınca onun column u da çıkartmak için kullanılır
+  const removeDynamicColumn = (filterKey) => {
+    // check if the dynamicColumnMapping or filterKey is null
+    if (!dynamicColumnMapping || !filterKey) return;
+
+    // get the column to remove from the dynamicColumnMapping
+    const columnToRemove = dynamicColumnMapping[filterKey];
+    /* one example:
+      columnToRemove = {
+        key: 'trailingPE',
+        label: 'Price to Earnings',
+        numeric: true
+      }
+    */
+    if (!columnToRemove) return;
+
+    // Null checks and safer column existence check
+    const columnExists = columns && columns.some(col => col?.key === columnToRemove.key);
+
+    // check column is not one of the base columns
+    const baseColumns = ['stock_symbol', 'currentPrice', 'regularMarketChangePercent', 'regularMarketVolume', 'market_cap'];
+
+    if(baseColumns.includes(columnToRemove.key)) return; // do not delete that column
+
+    // Check if the column to remove is not null and it exists in the columns array
+    if (columnToRemove && columnExists) {
+        const updatedColumns = columns.filter(col => col.key !== columnToRemove.key);
+        setColumns(updatedColumns);
+    }
+  };
+
+  const formatValue = (value, key) => {
+      if (value === null || value === undefined) return 'N/A';
     
-        if (key === 'market_cap') {
-            return (numValue / 1e9).toFixed(1) + 'B';
-        }
-        if (['currentPrice', 'regularMarketVolume'].includes(key)) {
-            return numValue.toLocaleString();
-        }
-        if (key.includes('%')) {
-            return numValue.toFixed(2) + '%';
-        }
-        return numValue.toFixed(2);
+      // Check if value is a number before calling toFixed
+      const numValue = Number(value);
+        
+      if (isNaN(numValue)) return value.toString();
+    
+      if (key === 'market_cap') {
+          return (numValue / 1e9).toFixed(1) + 'B';
+      }
+      if (['currentPrice', 'regularMarketVolume'].includes(key)) {
+          return numValue.toLocaleString();
+      }
+      if (key.includes('%')) {
+          return numValue.toFixed(2) + '%';
+      }
+      return numValue.toFixed(2);
     };
 
     // column bazlı gezerken cell deki value nın rengini belirten fonksiyon
@@ -227,84 +326,131 @@ const AllStocksPage = () => {
         else return 0;
     };   
 
+    // Apply the filters to the stocks array and update the columns based on the filters
+    const applyFilters = () => {
+      const filtered = stocks.filter(stock => {
+          // Some filters might be null, so we need to check if they are null before applying the filter
+          // If the filter is null, we assume that the stock meets the filter criteria
+          // If the filter is not null, we check if the stock meets the filter criteria
 
-  const applyFilters = () => {
-    const filtered = stocks.filter(stock => {
-        // Some filters might be null, so we need to check if they are null before applying the filter
-        // If the filter is null, we assume that the stock meets the filter criteria
-        // If the filter is not null, we check if the stock meets the filter criteria
+          const meetsBasicFilters =   
+              (filters.minPrice === 0 || stock.currentPrice >= filters.minPrice) &&
+              (filters.maxPrice === Infinity || stock.currentPrice <= filters.maxPrice) &&
+              (filters.minMarketCap === 0 || stock.market_cap >= filters.minMarketCap) &&
+              (filters.maxMarketCap === Infinity || stock.market_cap <= filters.maxMarketCap) &&
+              (filters.minVolume === 0 || stock.regularMarketVolume >= filters.minVolume) &&
+              (filters.maxVolume === Infinity || stock.regularMarketVolume <= filters.maxVolume);
 
-        const meetsBasicFilters =   
-            (filters.minPrice === 0 || stock.currentPrice >= filters.minPrice) &&
-            (filters.maxPrice === Infinity || stock.currentPrice <= filters.maxPrice) &&
-            (filters.minMarketCap === 0 || stock.market_cap >= filters.minMarketCap) &&
-            (filters.maxMarketCap === Infinity || stock.market_cap <= filters.maxMarketCap) &&
-            (filters.minVolume === 0 || stock.regularMarketVolume >= filters.minVolume) &&
-            (filters.maxVolume === Infinity || stock.regularMarketVolume <= filters.maxVolume);
+          const meetsProfitabilityFilters =
+              (filters.minPriceToEarnings === 0 || stock.trailingPE >= filters.minPriceToEarnings) &&
+              (filters.maxPriceToEarnings === Infinity || stock.trailingPE <= filters.maxPriceToEarnings) &&
+              (filters.minPriceToSales === -Infinity || stock.priceToSalesTrailing12Months >= filters.minPriceToSales) &&
+              (filters.maxPriceToSales === Infinity || stock.priceToSalesTrailing12Months <= filters.maxPriceToSales) &&
+              (filters.minPriceToBook === -Infinity || stock.priceToBook >= filters.minPriceToBook) &&
+              (filters.maxPriceToBook === Infinity || stock.priceToBook <= filters.maxPriceToBook) && 
+              (filters.minPriceToEbitda === -Infinity || stock.enterpriseToEbitda >= filters.minPriceToEbitda) &&
+              (filters.maxPriceToEbitda === Infinity || stock.enterpriseToEbitda <= filters.maxPriceToEbitda);
 
-        const meetsProfitabilityFilters =
-            (filters.minPriceToEarnings === 0 || stock.trailingPE >= filters.minPriceToEarnings) &&
-            (filters.maxPriceToEarnings === Infinity || stock.trailingPE <= filters.maxPriceToEarnings) &&
-            (filters.minPriceToSales === -Infinity || stock.priceToSalesTrailing12Months >= filters.minPriceToSales) &&
-            (filters.maxPriceToSales === Infinity || stock.priceToSalesTrailing12Months <= filters.maxPriceToSales) &&
-            (filters.minPriceToBook === -Infinity || stock.priceToBook >= filters.minPriceToBook) &&
-            (filters.maxPriceToBook === Infinity || stock.priceToBook <= filters.maxPriceToBook) && 
-            (filters.minPriceToEbitda === -Infinity || stock.enterpriseToEbitda >= filters.minPriceToEbitda) &&
-            (filters.maxPriceToEbitda === Infinity || stock.enterpriseToEbitda <= filters.maxPriceToEbitda);
+          const meetsMarginsFilters =
+              (filters.minNetProfitMargin === -Infinity || stock.profitMargins >= filters.minNetProfitMargin) &&
+              (filters.maxNetProfitMargin === Infinity || stock.profitMargins <= filters.maxNetProfitMargin) &&
+              (filters.minOperatingMargin === -Infinity || stock.operatingMargins >= filters.minOperatingMargin) &&
+              (filters.maxOperatingMargin === Infinity || stock.operatingMargins <= filters.maxOperatingMargin) &&
+              (filters.minGrossProfitMargin === -Infinity || stock.grossMargins >= filters.minGrossProfitMargin) &&
+              (filters.maxGrossProfitMargin === Infinity || stock.grossMargins <= filters.maxGrossProfitMargin);
+              
+          const meetsPerformanceFilters =
+              (filters.minReturnOnAssets === -Infinity || stock.returnOnAssets >= filters.minReturnOnAssets) &&
+              (filters.maxReturnOnAssets === Infinity || stock.returnOnAssets <= filters.maxReturnOnAssets) &&
+              (filters.minReturnOnEquity === -Infinity || stock.returnOnEquity >= filters.minReturnOnEquity) &&
+              (filters.maxReturnOnEquity === Infinity || stock.returnOnEquity <= filters.maxReturnOnEquity);
+              
 
-        const meetsMarginsFilters =
-            (filters.minNetProfitMargin === -Infinity || stock.profitMargins >= filters.minNetProfitMargin) &&
-            (filters.maxNetProfitMargin === Infinity || stock.profitMargins <= filters.maxNetProfitMargin) &&
-            (filters.minOperatingMargin === -Infinity || stock.operatingMargins >= filters.minOperatingMargin) &&
-            (filters.maxOperatingMargin === Infinity || stock.operatingMargins <= filters.maxOperatingMargin) &&
-            (filters.minGrossProfitMargin === -Infinity || stock.grossMargins >= filters.minGrossProfitMargin) &&
-            (filters.maxGrossProfitMargin === Infinity || stock.grossMargins <= filters.maxGrossProfitMargin);
-            
-        const meetsPerformanceFilters =
-            (filters.minReturnOnAssets === -Infinity || stock.returnOnAssets >= filters.minReturnOnAssets) &&
-            (filters.maxReturnOnAssets === Infinity || stock.returnOnAssets <= filters.maxReturnOnAssets) &&
-            (filters.minReturnOnEquity === -Infinity || stock.returnOnEquity >= filters.minReturnOnEquity) &&
-            (filters.maxReturnOnEquity === Infinity || stock.returnOnEquity <= filters.maxReturnOnEquity);
-            
+          const meetsBalanceSheetFilters =
+              (filters.minDebtToEquity === -Infinity || stock.debtToEquity >= filters.minDebtToEquity) &&
+              (filters.maxDebtToEquity === Infinity || stock.debtToEquity <= filters.maxDebtToEquity) &&
+              (filters.minCurrentRatio === -Infinity || stock.currentRatio >= filters.minCurrentRatio) &&
+              (filters.maxCurrentRatio === Infinity || stock.currentRatio <= filters.maxCurrentRatio) &&
+              (filters.minQuickRatio === -Infinity || stock.quickRatio >= filters.minQuickRatio) &&
+              (filters.maxQuickRatio === Infinity || stock.quickRatio <= filters.maxQuickRatio);
+    
+        return (
+          meetsBasicFilters &&
+          meetsProfitabilityFilters &&
+          meetsMarginsFilters &&
+          meetsPerformanceFilters &&
+          meetsBalanceSheetFilters
+        );
+      });
 
-        const meetsBalanceSheetFilters =
-            (filters.minDebtToEquity === -Infinity || stock.debtToEquity >= filters.minDebtToEquity) &&
-            (filters.maxDebtToEquity === Infinity || stock.debtToEquity <= filters.maxDebtToEquity) &&
-            (filters.minCurrentRatio === -Infinity || stock.currentRatio >= filters.minCurrentRatio) &&
-            (filters.maxCurrentRatio === Infinity || stock.currentRatio <= filters.maxCurrentRatio) &&
-            (filters.minQuickRatio === -Infinity || stock.quickRatio >= filters.minQuickRatio) &&
-            (filters.maxQuickRatio === Infinity || stock.quickRatio <= filters.maxQuickRatio);
-   
-      return (
-        meetsBasicFilters &&
-        meetsProfitabilityFilters &&
-        meetsMarginsFilters &&
-        meetsPerformanceFilters &&
-        meetsBalanceSheetFilters
-      );
-    });
+      setFilteredStocks(filtered);
+      setOpenFiltersDialog(false); // close the filters dialog after applying the filters
 
-    setFilteredStocks(filtered);
-    setOpenFiltersDialog(false); // close the filters dialog after applying the filters
+      // Add dynamic columns based on the filters
+      // if filter key included min and value is not 0 or -Infinity, add the dynamic column
+      // if filter key included max and value is not Infinity, add the dynamic column
+      // iterate through the filters object and add dynamic columns based on the filter keys
+      // bir dict de değere ulaşma 2 yolu var: dict.key veya dict['key']
+      Object.keys(filters || {}).forEach(filterKey => {
+        const filterValue = filters[filterKey];
+        
+        if ( (filterKey.includes('min') && filterValue !== -Infinity && filterValue !== 0)  ) {
+            addDynamicColumn(filterKey);
+        }
+        
+        if (filterKey.includes('max') && filterValue !== Infinity) {
+            addDynamicColumn(filterKey);
+        }
+        else{ 
+          // if it goes in here, it means that the filter is not applied
+
+          // before deleting, we need to check if the other version of the filter is applied
+          // if the other version of the filter is applied, do not delete the column
+          if (filterKey.includes('min')) {
+            const maxFilterKey = filterKey.replace('min', 'max');
+            if (filters[maxFilterKey] !== Infinity) return;
+            else{
+              removeDynamicColumn(filterKey);
+            }
+          }
+
+          // if the filter is not applied, remove the dynamic column
+          else if (filterKey.includes('max')) {
+            const minFilterKey = filterKey.replace('max', 'min');
+            if (filters[minFilterKey] !== -Infinity && filters[minFilterKey] !== 0) return;
+            // that means both version of the filter is default value
+            else{
+              removeDynamicColumn(filterKey);
+            }
+          }
+        } 
+    }
+  );
   };
 
   // Function to have a search bar to search for stocks
   // This will filter the filteredStocks state based on the search query
-    const handleSearch = (query) => {
-        if (!query) {
-        setFilteredStocks(stocks);
+  const handleSearch = (query) => {
+    // If no search query exists: yani search bar a hiç tıklanmamışsa
+    // set the filteredStocks state to the preSearchFilteredStocks state
+    if (!query) {
+        setFilteredStocks(preSearchFilteredStocks);
         setSearchQuery(query);
         return;
-        }
-        if (filteredStocks.length === 0) return;
+    } // search query silindiyse preSearchFilteredStocks state i filteredStocks state e atıyoruz
 
-        // we use the .filter() method to filter the stocks based on the search query
-        const filtered = filteredStocks.filter(stock =>
+    // When first starting a search (tıklandıysa), save the current filtered stocks to the preSearchFilteredStocks state
+    if (searchQuery === '') {
+        setPreSearchFilteredStocks(filteredStocks);
+    }
+
+    // Filter the current filteredStocks based on the query
+    const filtered = filteredStocks.filter(stock =>
         stock.stock_symbol.toLowerCase().includes(query.toLowerCase())
-        );
-        setFilteredStocks(filtered);
-        setSearchQuery(query);
-    };
+    );
+    setFilteredStocks(filtered); // update the filteredStocks state
+    setSearchQuery(query);
+};
 
   
     // filters dialog ı içeren jsx i döndüren fonksiyon
@@ -338,6 +484,7 @@ const AllStocksPage = () => {
         <Grid container spacing={2}>
 
           {/* Basic Filters */}
+          {/* value:  Eğer değer girilmediyse filters.minPrice ı 0 yap. Otherwise, filters.minPrice a eşitle*/}
           <Grid item xs={12}><Typography variant="h5" color='white'>Basic Filters</Typography></Grid>
           <Grid item xs={6}>
             <TextField
@@ -401,6 +548,8 @@ const AllStocksPage = () => {
                     style: { color: 'rgba(255,255,255,0.7)' }
                   }}
             />
+            {/* Once a filter changes, change the filter variable's corresponding key */}
+            {/* eğer değer girilmezse filters.maxMarketCap ı default value ye eşitle. */}
             </Grid>
             <Grid item xs={6}>
             <TextField
@@ -1118,19 +1267,46 @@ const AllStocksPage = () => {
                     fontWeight: 'bold',
                     background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
                     backgroundClip: 'text',
-                    color: 'transparent'
+                    color: 'transparent',
+                    marginBottom: '3px'
                 }}
             >
                 Stock Screener
             </Typography>
 
-            <Box display="flex" alignItems="center" p={2}>
+            {/* A text explaining what this page offers to the users */}
+            <Typography
+                variant="body1"
+                sx={{ 
+                    p: 3, 
+                    pt: 0, 
+                    fontWeight: 'bold',
+                    color: 'text.secondary'
+                }}
+            >
+                This page offers a comprehensive stock screener that allows you to filter stocks based on a variety of criteria and by search query. Click on a stock to view more details.
+            </Typography>
+
+            {/* Search bar and filters button in a box (material ui box) */}
+            <Box display="flex" alignItems="center" p={0.5}>
                 <TextField
                     label="Search Stocks"
                     variant="outlined"
                     value={searchQuery}
                     onChange={(e) => handleSearch(e.target.value)}
                     sx={{ flexGrow: 1, mr: 2 }}
+                    InputProps={{
+                      style: {
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(255,255,255,0.5)'
+                        }
+                      },
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      )
+                    }}
                 />
                 <Button 
                     variant="contained" 
@@ -1145,11 +1321,20 @@ const AllStocksPage = () => {
                     All Filters
                 </Button>
             </Box>
-
+            
+            {/* Table Container for the table of stocks */}
             <TableContainer component={Paper} sx={{ boxShadow: 3, borderRadius: 2 }}>
                 <Table stickyHeader>
                     <TableHead>
-                        <TableRow>
+                        <TableRow
+                          sx = {{
+                            '& td': {
+                              padding: '8px 12px', // up-down, left-right paddings for each cell
+                              fontSize: '1rem', // font size for each cell
+                              minHeight: '36px',   // row height
+                            },
+                          }}
+                        >
                             {columns.map(({ key, label, numeric }) => (
                                 <TableCell
                                     key={key}
@@ -1157,7 +1342,7 @@ const AllStocksPage = () => {
                                     sx={{ 
                                         fontWeight: 'bold', 
                                         backgroundColor: 'background.paper',
-                                        color: 'text.secondary'
+                                        color: 'text.secondary',
                                     }}
                                 >
                                     <TableSortLabel
@@ -1179,6 +1364,11 @@ const AllStocksPage = () => {
                                 hover
                                 onClick={() => handleRowClick(stock.stock_symbol)}
                                 sx={{ 
+                                    '& td': {
+                                      padding: '8px 12px', // up-down, left-right paddings for each cell
+                                      fontSize: '1rem', // font size for each cell
+                                      minHeight: '36px',  // row height
+                                    },
                                     cursor: 'pointer',
                                     '&:hover': { 
                                         backgroundColor: 'action.hover',
