@@ -7,7 +7,7 @@ import yfinance as yf  # New import
 from datetime import datetime  # New import
 import pandas as pd
 from models.models import Stock, Sector, Portfolio, PortfolioHolding, StockPrice, Financial, BalanceSheet, CashFlow, Dividend
-
+from datetime import timedelta
 
 class StockService:
     def __init__(self, db: Session):
@@ -140,7 +140,7 @@ class StockService:
             info["stock_symbol"] = stock_symbol[:-3]  # remove .IS from the end
             stock_info.append(info)
         return stock_info
-
+         
     
     # search for stocks by symbol or name
     def search_stocks(self, query: str) -> List[Stock]:
@@ -283,6 +283,48 @@ class StockService:
             return stock_prices
         except Exception as e:
             print(f"An error occurred while fetching stock prices: {e}")
+
+    def get_prices_of_stock_in_predefined_dates(self, stock_symbol: str) -> List[StockPrice]:
+        stock = self.db.query(Stock).filter(Stock.stock_symbol == stock_symbol).first()
+        if stock is None:
+            raise ValueError(f"Stock with symbol {stock_symbol} does not exist")
+
+        stock_symbol += ".IS"
+        stock = yf.Ticker(stock_symbol)
+        stock_data = stock.history(period="5y")
+
+        # Ensure stock_data index is timezone-naive
+        stock_data.index = stock_data.index.tz_localize(None)
+
+        stock_prices = []
+        date_intervals = {
+            "current": date.today(),
+            "one_week" : date.today() - timedelta(days=7),
+            "one_month" : date.today() - timedelta(days=30),
+            "three_months" : date.today() - timedelta(days=90),
+            "six_months" : date.today() - timedelta(days=180),
+            "one_year" : date.today() - timedelta(days=365),
+            "three_years" : date.today() - timedelta(days=3*365),
+            "five_years" : date.today() - timedelta(days=5*365)
+        }
+
+        for target_date in date_intervals.values():
+            # Convert target_date to timezone-naive Timestamp
+            target_timestamp = pd.Timestamp(target_date).tz_localize(None)
+            
+            # find the closest date in the stock data
+            closest_date = min(stock_data.index, key=lambda x: abs(x - target_timestamp))
+            closest_price = stock_data.loc[closest_date]['Close']
+            stock_price = StockPrice(
+                stock_symbol=stock_symbol[:-3],  # remove .IS from the end
+                date=closest_date.date(),
+                close_price=closest_price
+            )
+            stock_prices.append(stock_price)
+
+        return stock_prices
+
+
         
     # services related to income, balance sheet, cash flow and dividend data 
     def add_income_statement(self, stock_symbol: str):
