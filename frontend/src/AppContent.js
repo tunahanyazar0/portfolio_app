@@ -12,13 +12,12 @@ import RegisterPage from './pages/registerPage';
 import Dashboard from './pages/dashboard';
 import NotFound from './pages/NotFound';
 import StockPage from './pages/StockPage';
-import StocksPage from './pages/StocksPage';
 import ProfilePage from './pages/ProfilePage';
 import PortfoliosPage from './pages/PortfoliosPage';
 import PortfolioPage from './pages/PortfolioPage';
 import AllSectorsPage from './pages/AllSectorsPage';
 import SectorPage from './pages/SectorPage';
-import NewStocksPage from './pages/NewAllStocksPage';
+import AllStocksPage from './pages/AllStocksPage';
 
 // navbars are seen in all of the pages if the user is authenticated
 // if the user is not authenticated, the user is redirected to the login page
@@ -53,15 +52,6 @@ function AppContent() {
               element={
                 <PrivateRoute>
                   <StockPage />
-                </PrivateRoute>
-              } 
-            />
-
-            <Route 
-              path="/stocks" 
-              element={
-                <PrivateRoute>
-                  <StocksPage />
                 </PrivateRoute>
               } 
             />
@@ -112,10 +102,10 @@ function AppContent() {
             />
 
             <Route
-              path="/new-stocks"
+              path="/stocks"
               element = {
                 <PrivateRoute>
-                  <NewStocksPage />
+                  <AllStocksPage />
                 </PrivateRoute>
               } 
             />

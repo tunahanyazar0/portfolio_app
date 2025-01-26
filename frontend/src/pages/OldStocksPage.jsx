@@ -17,7 +17,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import stockService from '../services/stockService';
 
-const StockMetricsTable = () => {
+const StockMetricsTable_2 = () => {
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -208,4 +208,4 @@ const StockMetricsTable = () => {
   );
 };
 
-export default StockMetricsTable;
+export default StockMetricsTable_2;
