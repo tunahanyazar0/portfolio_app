@@ -118,12 +118,23 @@ const AllSectorsPage = () => {
         variant="h3" 
         sx={{ 
           textAlign: 'center', 
-          marginBottom: 4, 
           fontWeight: 600, 
           color: 'primary.main' 
         }}
       >
         Explore Market Sectors
+      </Typography>
+      {/* Text field to say what this page offers for user */}
+      <Typography
+        variant="body1"
+        sx={{ 
+          p: 3, 
+          pt: 0, 
+          fontWeight: 'bold',
+          color: 'text.secondary'
+      }}
+      >
+        Explore different market sectors to find out which sectors are performing well and which are not. Click to view more details about each sector.
       </Typography>
 
       <TextField
