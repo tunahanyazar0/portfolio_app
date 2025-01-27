@@ -15,6 +15,9 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     role = Column(Enum('admin', 'user', 'moderator', name='user_roles'), nullable=False, default='user')
     
+    # relationship to Watchlist of the user
+    watchlists = relationship("Watchlist", back_populates="user")
+    # relationship to Portfolio of the user
     portfolios = relationship("Portfolio", back_populates="user")
 
 class Sector(Base):
@@ -33,7 +36,8 @@ class Stock(Base):
     sector_id = Column(Integer, ForeignKey('sectors.sector_id'), nullable=False)
     market_cap = Column(DECIMAL(20, 2))
     last_updated = Column(DateTime, default=datetime.utcnow)
-    
+
+    # relationships of the stock object
     sector = relationship("Sector", back_populates="stocks")
     financials = relationship("Financial", back_populates="stock")
     balance_sheets = relationship("BalanceSheet", back_populates="stock")
@@ -41,6 +45,7 @@ class Stock(Base):
     dividends = relationship("Dividend", back_populates="stock")
     prices = relationship("StockPrice", back_populates="stock")
     holdings = relationship("PortfolioHolding", back_populates="stock")
+    watchlist_items = relationship("WatchlistItem", back_populates="stock")
 
 class Financial(Base):
     __tablename__ = "financials"
@@ -137,5 +142,32 @@ class PortfolioHolding(Base):
     stock = relationship("Stock", back_populates="holdings")
 
 
+class Watchlist(Base):
+    __tablename__ = "watchlists"
+    
+    watchlist_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
+    name = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow) # if not provided, default to current time
+    
+    # Relationship to User
+    user = relationship("User", back_populates="watchlists")
+    
+    # Relationship to WatchlistItem
+    items = relationship("WatchlistItem", back_populates="watchlist", cascade="all, delete-orphan")
 
-
+class WatchlistItem(Base):
+    __tablename__ = "watchlist_items"
+    
+    item_id = Column(Integer, primary_key=True, autoincrement=True)
+    watchlist_id = Column(Integer, ForeignKey('watchlists.watchlist_id'), nullable=False)
+    stock_symbol = Column(String(10), ForeignKey('stocks.stock_symbol'), nullable=False)
+    # bu fiyat gerçekleşirse beni uyar
+    alert_price = Column(DECIMAL(10, 2), nullable=True)  
+    added_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship to Watchlist
+    watchlist = relationship("Watchlist", back_populates="items")
+    
+    # Relationship to Stock
+    stock = relationship("Stock")

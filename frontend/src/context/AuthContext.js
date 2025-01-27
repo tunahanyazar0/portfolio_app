@@ -2,71 +2,78 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/authService';
 
-const AuthContext = createContext(null);
+// 1. Create a context
+const AuthContext = createContext({
+  user: null,
+  userId: null,
+  login: () => {},
+  logout: () => {},
+  isLoading: true,
+});
+
 
 /*
-Context in react:
+auth context olayı şu:
 
-1. **user**: This usually holds the information about the currently authenticated user. 
-It can include details like the user's ID, name, email, and any other relevant 
-data that you might need throughout your application.
-
-2. **login**: This is a function that is responsible for authenticating a user. 
-It typically takes user credentials (like username and password), 
-sends them to an authentication service (like an API), and if successful, 
-updates the `user` state with the authenticated user's information.
-
-3. **logout**: This function is used to log the user out of the application. 
-It usually clears the user state and may also involve removing any 
-authentication tokens stored in local storage or cookies.
-
-4. **isLoading**: This boolean value indicates whether the authentication process
- is currently in progress. It can be useful for showing loading indicators
-  in the UI while the login or logout process is happening.
+Herhangi bir page de şu şekilde çağırıcaz:
+const { user, userId, logout } = useAuth();
+veya hepsini çağırmak istemiyorsak:
+const { userId } = useAuth();
+veya hepsi:
+const { user, userId, login, logout} = useAuth();
+-> bu return kısmında value içindeki değerlerin karşılığı oluyor.
+veya:
+const { userId } = useAuth();
 
 
+user ve userId, context içindeki user ve userId state'lerini temsil ediyor.
 
-These three:
-- Maintain the user's authentication state
-- Provide access to user data throughout the app
-- Handle login/logout operations consistently
-- Enable role-based access control
+Bu sayede her component de user ve userId state'lerini tekrar tekrar tanımlamamıza gerek kalmıyor.
+Ayrıca bu login ve log out functionları nı da direkt kullanabiliyoruz.
 
+Kullanmak için:
+import { useAuth } from './context/AuthContext';
 
-You can access them anywhere in your app using the useAuth hook:
-import { useAuth } from '../context/AuthContext';
-
-function SomeComponent() {
-  const { user, login, logout } = useAuth();
-  
-  // Now you can use these values/functions
-  if (user?.role === 'admin') {
-    // Show admin features
-  }
 */
 
+// 2. Create a provider component for context
 export const AuthProvider = ({ children }) => {
-  // 1. user: Stores the current user's data
-  // Contains data like: { username, role, token, etc... }
-  // Is null when no user is logged in
-  /*
-  example usage:
-     const { user } = useAuth();
-    if (user) {
-      console.log(user.username); // Access user data
-      console.log(user.role);     // Check user role
-    }
-  */
+  // user contains user data if logged in: user_id, username, email, role 
   const [user, setUser] = useState(null); 
+  const [userId, setUserId] = useState(null);
   // user data auth service kullanılarak çekilicek
   const [isLoading, setIsLoading] = useState(true);
 
+  // await authService.getUserInformationByUsername(username); -> çünkü bu promise döndürüyor, await ile beklememiz gerekiyor.
+  // await kullanınca userData artık bir promise olmuyor, direk user data oluyor, yani dictionary oluyor.
   useEffect(() => {
-    // Check if user is logged in on app load
-    const user = authService.getCurrentUser();
-    setUser(user);
-    setIsLoading(false);
+    const fetchUserData = async () => {
+      try {
+        // Extract the username from the token
+        const username = authService.getUsernameFromToken();
+  
+        if (username) {
+          // Fetch user data by username
+          const userData = await authService.getUserInformationByUsername(username); // Await the Promise
+  
+          console.log("userData: ", userData);
+          console.log("user_id", userData?.user_id); // Use optional chaining to avoid errors
+  
+          if (userData) {
+            setUser(userData);
+            setUserId(userData.user_id);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setIsLoading(false); // Ensure loading is set to false regardless of success or error
+      }
+    };
+  
+    fetchUserData();
   }, []);
+  
 
   // 2. login: Function to set user data in context
   const login = (userData) => {
@@ -80,7 +87,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, userId, login, logout, isLoading }}>
       {!isLoading && children}
     </AuthContext.Provider>
   );

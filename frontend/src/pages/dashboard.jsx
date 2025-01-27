@@ -92,7 +92,18 @@ const Dashboard = () => {
   return (
     <Container>
       {/* Portfolios Preview */}
-      <Typography variant="h4" sx={{ margin: '2rem 0 1rem', fontWeight: 700 }}>
+      <Typography
+        variant="h4" 
+        sx={{ 
+            mb: 4,
+            margin: '2rem 0 1rem',
+            fontWeight: 700,
+            textAlign: 'center',
+            background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+            backgroundClip: 'text',
+            color: 'transparent'
+        }}
+      >
         Featured Portfolios
       </Typography>
       <Grid container spacing={3}>
@@ -104,7 +115,19 @@ const Dashboard = () => {
       </Grid>
 
       {/* Sectors Overview */}
-      <Typography variant="h4" sx={{ margin: '2rem 0 1rem', fontWeight: 700 }}>
+      <Typography 
+        variant="h4" 
+        sx={{ 
+            mb: 4,
+            margin: '2rem 0 1rem',
+            fontWeight: 700,
+            textAlign: 'center',
+            background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+            backgroundClip: 'text',
+            color: 'transparent'
+        }}
+      
+      >
         Explore Sectors
       </Typography>
       <Grid container spacing={3}>
