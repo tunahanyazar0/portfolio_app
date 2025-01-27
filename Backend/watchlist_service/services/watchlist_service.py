@@ -1,7 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime, date
-from models.models import Watchlist, WatchlistItem, Stock
+from models.models import Watchlist, WatchlistItem, Stock, User
 from sqlalchemy.exc import SQLAlchemyError
 from decimal import Decimal
 
@@ -97,6 +97,15 @@ class WatchlistService:
         response = self.db.query(Watchlist).filter(Watchlist.watchlist_id == watchlist_id).first()
         return response
         # if no watchlist with the given id is found, it will return None
+
+    # get all watchlists of the user 
+    def get_watchlists_of_user(self, user_id: int) -> List[Watchlist]:
+        # check if the user exists
+        user = self.db.query(User).filter(User.user_id == user_id).first()
+        if not user:
+            raise ValueError(f"User with id {user_id} does not exists")
+        
+        return self.db.query(Watchlist).filter(Watchlist.user_id == user_id).all()
 
     def get_watchlist_items(self, watchlist_id: int) -> List[WatchlistItem]:
         # check if the watchlist exists

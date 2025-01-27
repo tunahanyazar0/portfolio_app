@@ -61,6 +61,12 @@ const authService = {
   getUsernameFromToken: () => {
     try {
       const user = localStorage.getItem('user');
+      /*
+        user = {
+          access_token:
+          token
+        }
+      */
       if (user) {
         const parsedUser = JSON.parse(user); // Parse the JSON string to object
         const decodedToken = jwtDecode(parsedUser.access_token); // Use the parsed access_token

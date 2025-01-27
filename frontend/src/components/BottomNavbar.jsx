@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BottomNavigation, BottomNavigationAction, Box } from '@mui/material';
-import { Home, Business, BarChart, PieChart, AccountBox } from '@mui/icons-material';
+// for watchlists page icon: WatchLater
+import { Home, Business, BarChart, PieChart, AccountBox,WatchLater} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -27,9 +28,12 @@ const BottomNavbar = () => {
         navigate('/stocks'); // Stocks page
         break;
       case 3:
-        navigate('/portfolios'); // Portfolio page
+        navigate('/watchlists'); // Watchlists page
         break;
       case 4:
+        navigate('/portfolios'); // Portfolio page
+        break;
+      case 5:
         navigate('/profile'); // Profile page
         break;
       default:
@@ -67,6 +71,7 @@ const BottomNavbar = () => {
         <BottomNavigationAction label="Home" icon={<Home />} />
         <BottomNavigationAction label="Sectors" icon={<Business />} />
         <BottomNavigationAction label="Stocks" icon={<BarChart />} />
+        <BottomNavigationAction label="WatchLists" icon={<WatchLater />} />
         <BottomNavigationAction label="Portfolio" icon={<PieChart />} />
         <BottomNavigationAction label="Profile" icon={<AccountBox />} />
       </BottomNavigation>

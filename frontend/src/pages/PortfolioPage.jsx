@@ -521,7 +521,8 @@ const PortfolioPage = ({ match }) => {
                                 sx={{
                                     color : 'blue',
                                     background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
-                                    py: 2
+                                    py: 2,
+                                    color: 'white'
                                 }}
                             >
                                 Add Holding
@@ -650,7 +651,7 @@ const PortfolioPage = ({ match }) => {
                         onClick={handleAddHolding}
                         variant="contained"
                         disabled={isLoading}
-                        sx={{ background: 'linear-gradient(45deg, #2563eb, #7c3aed)' }}
+                        sx={{ background: 'linear-gradient(45deg, #2563eb, #7c3aed)', color : 'white' }}
                     >
                         {isLoading ? <CircularProgress size={24} /> : 'Confirm'}
                     </Button>

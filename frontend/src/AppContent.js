@@ -18,13 +18,17 @@ import PortfolioPage from './pages/PortfolioPage';
 import AllSectorsPage from './pages/AllSectorsPage';
 import SectorPage from './pages/SectorPage';
 import AllStocksPage from './pages/AllStocksPage';
+import WatchlistPage from './pages/WatchListPage';
+import WatchListsPage from './pages/WatchListsPage';
 
 // navbars are seen in all of the pages if the user is authenticated
 // if the user is not authenticated, the user is redirected to the login page
 import BottomNavbar from './components/BottomNavbar';
 import Navbar from './components/Navbar';
 
+
 function AppContent() {
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline /> {/* Resets browser styling */}
@@ -108,6 +112,24 @@ function AppContent() {
                   <AllStocksPage />
                 </PrivateRoute>
               } 
+            />
+
+            <Route
+              path="/watchlist/:watchlistId"
+              element = {
+                <PrivateRoute>
+                  <WatchlistPage />
+                </PrivateRoute>
+              }
+            />
+
+            <Route
+              path="/watchlists"
+              element = {
+                <PrivateRoute>
+                  <WatchListsPage/>
+                </PrivateRoute>
+              }
             />
             
             {/* Redirect root to dashboard if authenticated, otherwise to login */}
