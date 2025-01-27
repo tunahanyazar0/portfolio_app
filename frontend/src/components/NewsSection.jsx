@@ -52,11 +52,12 @@ const NewsSection = ({ news, loading = false }) => {
             <Typography 
                 variant="h4" 
                 sx={{ 
-                    mb: 4, 
-                    fontWeight: 700, 
-                    textAlign: 'center', 
-                    color: 'text.primary',
-                    letterSpacing: -1
+                    mb: 4,
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                    backgroundClip: 'text',
+                    color: 'transparent'
                 }}
             >
                 Latest News

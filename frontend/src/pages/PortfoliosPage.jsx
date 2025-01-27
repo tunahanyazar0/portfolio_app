@@ -189,7 +189,15 @@ const PortfoliosPage = () => {
           marginTop: 3
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+        <Typography
+          variant="h4" 
+          sx={{ 
+              fontWeight: 600,
+              background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+              backgroundClip: 'text',
+              color: 'transparent'
+          }}
+        >
           My Portfolios
         </Typography>
         {/* Button to create a new portfolio */}

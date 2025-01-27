@@ -6,7 +6,7 @@ from typing import List, Optional
 import yfinance as yf  # New import
 from datetime import datetime  # New import
 import pandas as pd
-from models.models import Stock, Sector, Portfolio, PortfolioHolding, StockPrice, Financial, BalanceSheet, CashFlow, Dividend
+from models.models import *
 from datetime import timedelta
 
 class StockService:
@@ -641,3 +641,4 @@ class StockService:
         result = self.db.query(Sector).all()
         print(result)
         return result
+    

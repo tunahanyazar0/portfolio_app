@@ -117,3 +117,23 @@ CREATE TABLE portfolio_holdings (
     FOREIGN KEY (portfolio_id) REFERENCES portfolios(portfolio_id) ON DELETE CASCADE,
     FOREIGN KEY (stock_symbol) REFERENCES stocks(stock_symbol)
 );
+
+-- Watchlist table
+CREATE TABLE watchlists (
+    watchlist_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+-- WatchlistItem table
+CREATE TABLE watchlist_items (
+    item_id INT AUTO_INCREMENT PRIMARY KEY,
+    watchlist_id INT NOT NULL,
+    stock_symbol VARCHAR(10) NOT NULL,
+    added_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    alert_price DECIMAL(10, 2), # can be null
+    FOREIGN KEY (watchlist_id) REFERENCES watchlists(watchlist_id) ON DELETE CASCADE,
+    FOREIGN KEY (stock_symbol) REFERENCES stocks(stock_symbol)
+);

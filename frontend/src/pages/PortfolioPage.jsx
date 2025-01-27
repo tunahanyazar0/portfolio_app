@@ -719,16 +719,6 @@ const PortfolioPage = ({ match }) => {
             {/* Portfolio News Section */}
             {portfolioNews.length > 0 && (
             <Box sx={{ mt: 6 }}>
-                <Typography variant="h5" sx={{
-                mb: 4,
-                fontWeight: 600,
-                textAlign: 'center',
-                background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
-                backgroundClip: 'text',
-                color: 'transparent'
-                }}>
-                News About Your Portfolio Companies
-                </Typography>
                 <NewsSection news={portfolioNews} />
             </Box>
             )}
