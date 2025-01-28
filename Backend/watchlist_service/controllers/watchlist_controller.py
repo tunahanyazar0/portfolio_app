@@ -176,14 +176,14 @@ def delete_watchlist_item(item_id: int, db: Session = Depends(get_db)):
 example url: /watchlist-items/1/alert
 example request:
 {
-    "alert_price": "10.5"
+    "alert_price": 10.5
 }   
 example response:
 {
     "item_id": 1,
     "watchlist_id": 1,
     "stock_symbol": "ORGE",
-    "alert_price": "10.5",
+    "alert_price": 10.5,
     "added_at": "2025-01-27T10:25:02"
 }
 """
@@ -191,6 +191,7 @@ example response:
 def set_alert_price(item_id: int, alert_data: AlertPriceUpdate, db: Session = Depends(get_db)):
     try:
         service = WatchlistService(db)
+        # alert_data.alert_price = decimal
         item = service.set_alert_price(item_id, alert_price=Decimal(alert_data.alert_price))
         return WatchlistItemResponse.from_orm(item)
     except ValueError as e:

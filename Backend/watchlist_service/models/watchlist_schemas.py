@@ -27,7 +27,7 @@ class WatchlistItemResponse(BaseModel):
     item_id: int
     watchlist_id: int
     stock_symbol: str
-    alert_price: Optional[Decimal] = None
+    alert_price: Optional[Decimal]
     added_at: datetime
 
     class Config:

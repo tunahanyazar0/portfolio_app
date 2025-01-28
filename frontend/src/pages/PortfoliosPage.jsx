@@ -11,6 +11,7 @@
       
 
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import {
   Container,
   Grid,
@@ -76,6 +77,7 @@ const CreatePortfolioDialog = ({
 };
 
 const PortfoliosPage = () => {
+  const {user} = useAuth();
   const [portfolios, setPortfolios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -90,8 +92,6 @@ const PortfoliosPage = () => {
   useEffect(() => {
     const fetchPortfolios = async () => {
       try {
-        const username = authService.getUsernameFromToken();
-        const user = await authService.getUserInformationByUsername(username);
         const data = await portfolioService.getUserPortfolios(user.user_id);
         /*
           It returns an array of portfolios like this:
