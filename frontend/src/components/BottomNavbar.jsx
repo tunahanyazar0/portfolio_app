@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BottomNavigation, BottomNavigationAction, Box } from '@mui/material';
 // for watchlists page icon: WatchLater
-import { Home, Business, BarChart, PieChart, AccountBox,WatchLater} from '@mui/icons-material';
+import { Home, Business, BarChart, PieChart, AccountBox,WatchLater, Dashboard, ShowChart} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -68,9 +68,9 @@ const BottomNavbar = () => {
           background: 'transparent',
         }}
       >
-        <BottomNavigationAction label="Home" icon={<Home />} />
+        <BottomNavigationAction label="Dashboard" icon={<Dashboard />} />
         <BottomNavigationAction label="Sectors" icon={<Business />} />
-        <BottomNavigationAction label="Stocks" icon={<BarChart />} />
+        <BottomNavigationAction label="Stocks" icon={<ShowChart />} />
         <BottomNavigationAction label="WatchLists" icon={<WatchLater />} />
         <BottomNavigationAction label="Portfolio" icon={<PieChart />} />
         <BottomNavigationAction label="Profile" icon={<AccountBox />} />

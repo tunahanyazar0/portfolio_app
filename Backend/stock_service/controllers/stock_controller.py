@@ -9,6 +9,7 @@ from models.models import Stock, StockPrice, Portfolio, PortfolioHolding
 from models.pydantic_models import *
 from utils.authentication_utils import verify_role # this function checks the token and returns the username if the token is legit
 
+
 router = APIRouter(
     prefix="/api/stocks",
     tags=["stocks"]
@@ -52,7 +53,7 @@ def get_portfolio_holdings(portfolio_id: int, db: Session = Depends(get_db)):
 
 # to add a holding to a portfolio with the given id
 @router.post("/portfolios/{portfolio_id}/add/holdings", response_model=HoldingResponse)
-def add_holding(
+async def add_holding(
     portfolio_id: int,
     holding: HoldingCreate,
     db: Session = Depends(get_db)
@@ -64,7 +65,9 @@ def add_holding(
     stock = service.get_stock(holding.symbol)
     if not stock:
         raise HTTPException(status_code=404, detail="Stock not found")
-    return service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
+
+    response = service.add_holding(portfolio_id, holding.symbol, holding.quantity, Decimal(str(holding.price)))
+    return response
 
 # to update a holding in a portfolio
 @router.put("/portfolios/holdings/decrease/{holding_id}", response_model=HoldingResponse)

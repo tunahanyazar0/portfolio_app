@@ -68,15 +68,22 @@ const WatchlistPage = () => {
       // Enhance stocks data with current prices
       const enhancedStocks = await Promise.all(
         stocksData.map(async (stock) => {
+          console.log(stock);
           const priceInfo = await stockService.getStockPrice(stock.stock_symbol);
           const sectorInfo = await stockService.getSectorOfStock(stock.stock_symbol);
           return {
             ...stock,
             currentPrice: Number(priceInfo.close_price),
+            alert_price: stock.alert_price ? Number(stock.alert_price) : null, // Convert to number
             sector: sectorInfo.name
           };
         })
       );
+      /* 
+      not: Mysql decimal objeyi string olarak tutuyor. Bu nedenle her ne kadar decimal olarak yani bir number
+      olarak backend e atıp db ye eklesek de o bize dönüşte string olarak gelicek. Bu nedenele alert_price
+      değerini string olarak alıp number a çeviriyoruz.
+      */
       
       setStocks(enhancedStocks);
       setLoading(false);
@@ -137,15 +144,27 @@ const WatchlistPage = () => {
   const handleSetAlert = async () => {
     if (!selectedStockForAlert || !alertPrice) return;
     try {
-      await watchListService.setStockAlert(
-        watchlistId,
-        selectedStockForAlert.stock_symbol,
+      // check alert price is valid
+      if (Number(alertPrice) <= 0) {
+        console.error('Alert price must be a positive number');
+        return;
+      }
+      
+      // item_id keyword will give us the watchlist_item_id of the selected stock
+      const watchListItemId = stocks.find(stock => stock.stock_symbol === selectedStockForAlert.stock_symbol).item_id;
+      // stock symbol is not needed
+      await watchListService.setAlertPrice(
+        watchListItemId,
         Number(alertPrice)
       );
+
+      // after setting the alert, fetch the watchlist data again so that the alert price is updated
       await fetchWatchlistData();
+      // close the dialog and reset the state
       setAlertDialogOpen(false);
+      // reset the state
       setSelectedStockForAlert(null);
-      setAlertPrice('');
+      setAlertPrice(''); 
     } catch (error) {
       console.error('Error setting alert:', error);
     }
@@ -154,8 +173,9 @@ const WatchlistPage = () => {
   // Handle removing price alert
   const handleRemoveAlert = async (symbol) => {
     try {
-      await watchListService.removeStockAlert(watchlistId, symbol);
-      await fetchWatchlistData();
+      const watchlist_item_id = stocks.find(stock => stock.stock_symbol === symbol).item_id;
+      await watchListService.removeAlertPrice(watchlist_item_id);
+      await fetchWatchlistData(); // then fetch the watchlist data again so that the alert price is updated
     } catch (error) {
       console.error('Error removing alert:', error);
     }
@@ -242,6 +262,7 @@ const WatchlistPage = () => {
             </TableRow>
           </TableHead>
           <TableBody>
+            {/* one TableRow for each stock = watchlist item info + price info + sector info */}
             {stocks.map((stock) => (
               <TableRow
                 key={stock.stock_symbol}

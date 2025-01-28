@@ -39,7 +39,6 @@ import { useAuth } from '../context/AuthContext';
 const WatchListsPage = () => {
     const navigate = useNavigate();
     const { userId } = useAuth();
-    console.log("userId in watchlists page: ", userId);
   
     // State
     const [watchlists, setWatchlists] = useState([]);

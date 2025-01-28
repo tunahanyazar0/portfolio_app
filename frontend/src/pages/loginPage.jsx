@@ -44,8 +44,10 @@ const LoginPage = () => {
       // Call authService to authenticate, response is the user data
       const response = await authService.login(formData.username, formData.password);
 
+      // response is access_token, token_type
+
       // Update global auth state using AuthContext
-      login(response);
+      login();
 
       // Navigate to dashboard on success
       navigate('/dashboard');

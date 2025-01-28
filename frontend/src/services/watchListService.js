@@ -122,7 +122,7 @@ example response:
     "item_id": 1,
     "watchlist_id": 1,
     "stock_symbol": "ORGE",
-    "alert_price": "10.5",
+    "alert_price": 10.5,
     "added_at": "2025-01-27T10:25:02"
 }
   */

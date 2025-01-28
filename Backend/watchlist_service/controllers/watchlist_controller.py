@@ -11,6 +11,8 @@ from models.watchlist_schemas import (
     WatchlistItemCreate,
     AlertPriceUpdate
 )
+# to inform the user about the changes in the watchlist
+from utils.websocket_manager import websocket_manager
 
 router = APIRouter(
     prefix="/api/watchlists",
@@ -59,10 +61,17 @@ example response:
 }
 """
 @router.post("/add/{watchlist_id}/items", response_model=WatchlistItemResponse)
-def add_to_watchlist(watchlist_id: int, item_data: WatchlistItemCreate, db: Session = Depends(get_db)):
+async def add_to_watchlist(watchlist_id: int, item_data: WatchlistItemCreate, db: Session = Depends(get_db)):
     service = WatchlistService(db)
     try:
         item = service.add_to_watchlist(watchlist_id=watchlist_id, symbol=item_data.stock_symbol)
+
+        # inform the user about the changes in the watchlist
+        watchlist = service.get_watchlist(watchlist_id)
+        await websocket_manager.send_update(
+            watchlist.user_id, f"Stock {item_data.stock_symbol} added to watchlist {watchlist.name}."
+        )
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return WatchlistItemResponse.from_orm(item)
@@ -176,14 +185,14 @@ def delete_watchlist_item(item_id: int, db: Session = Depends(get_db)):
 example url: /watchlist-items/1/alert
 example request:
 {
-    "alert_price": "10.5"
+    "alert_price": 10.5
 }   
 example response:
 {
     "item_id": 1,
     "watchlist_id": 1,
     "stock_symbol": "ORGE",
-    "alert_price": "10.5",
+    "alert_price": 10.5,
     "added_at": "2025-01-27T10:25:02"
 }
 """
@@ -191,6 +200,7 @@ example response:
 def set_alert_price(item_id: int, alert_data: AlertPriceUpdate, db: Session = Depends(get_db)):
     try:
         service = WatchlistService(db)
+        # alert_data.alert_price = decimal
         item = service.set_alert_price(item_id, alert_price=Decimal(alert_data.alert_price))
         return WatchlistItemResponse.from_orm(item)
     except ValueError as e:
