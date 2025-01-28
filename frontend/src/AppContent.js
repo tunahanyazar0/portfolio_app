@@ -26,15 +26,19 @@ import WatchListsPage from './pages/WatchListsPage';
 import BottomNavbar from './components/BottomNavbar';
 import Navbar from './components/Navbar';
 
+// We want the WebSocket connection to remain active for authenticated users across all pages.
+import WebSocketComponent from './components/WebSocketComponent';
 
 function AppContent() {
-
+  
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline /> {/* Resets browser styling */}
       <AuthProvider>
         <Navbar />
         <BottomNavbar />
+
+        {<WebSocketComponent/>} {/* Run WebSocket only for authenticated users */}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Routes>

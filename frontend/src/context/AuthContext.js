@@ -56,9 +56,6 @@ export const AuthProvider = ({ children }) => {
           // Fetch user data by username
           const userData = await authService.getUserInformationByUsername(username); // Await the Promise
   
-          console.log("userData: ", userData);
-          console.log("user_id", userData?.user_id); // Use optional chaining to avoid errors
-  
           if (userData) {
             setUser(userData);
             setUserId(userData.user_id);
@@ -76,8 +73,21 @@ export const AuthProvider = ({ children }) => {
   
 
   // 2. login: Function to set user data in context
-  const login = (userData) => {
+  const login = () => {
+    // userData is access_token, token_type
+    const username = authService.getUsernameFromToken();
+    const userData = authService.getUserInformationByUsername(username);
     setUser(userData);
+    /*
+      Login olduktan sonra userData, user a setleniyor yani user:
+      user = {
+        user_id: 1,
+        username: "johndoe",
+        email: "
+        first_name: "John",
+        last_name: "Doe",
+        role: "user"
+      */  
   };
 
   // 3. logout: Function to clear user data

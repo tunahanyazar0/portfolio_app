@@ -11,6 +11,8 @@ from models.watchlist_schemas import (
     WatchlistItemCreate,
     AlertPriceUpdate
 )
+# to inform the user about the changes in the watchlist
+from utils.websocket_manager import websocket_manager
 
 router = APIRouter(
     prefix="/api/watchlists",
@@ -59,10 +61,17 @@ example response:
 }
 """
 @router.post("/add/{watchlist_id}/items", response_model=WatchlistItemResponse)
-def add_to_watchlist(watchlist_id: int, item_data: WatchlistItemCreate, db: Session = Depends(get_db)):
+async def add_to_watchlist(watchlist_id: int, item_data: WatchlistItemCreate, db: Session = Depends(get_db)):
     service = WatchlistService(db)
     try:
         item = service.add_to_watchlist(watchlist_id=watchlist_id, symbol=item_data.stock_symbol)
+
+        # inform the user about the changes in the watchlist
+        watchlist = service.get_watchlist(watchlist_id)
+        await websocket_manager.send_update(
+            watchlist.user_id, f"Stock {item_data.stock_symbol} added to watchlist {watchlist.name}."
+        )
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     return WatchlistItemResponse.from_orm(item)

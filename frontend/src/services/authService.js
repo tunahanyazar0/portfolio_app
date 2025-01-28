@@ -87,6 +87,7 @@ const authService = {
     return !!user?.token; // returns true if user exists and has token
   }, 
 
+
   getUserInformationByUsername: async (username) => {
     try {
       const response = await axios.get(`${Authentication_backend_url}/auth/users/${username}`);
