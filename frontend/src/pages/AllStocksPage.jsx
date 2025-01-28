@@ -134,68 +134,6 @@ const AllStocksPage = () => {
     maxInterestCoverage : { key: 'interestCoverage', label: 'Interest Coverage', numeric: true }
 };
 
-// Function to add a dynamic column to the table based on the filter key
-  const addDynamicColumn = (filterKey) => {
-    // check if the dynamicColumnMapping or filterKey is null
-    if (!dynamicColumnMapping || !filterKey) return;
-
-    // get the new column from the dynamicColumnMapping
-    const newColumn = dynamicColumnMapping[filterKey];
-    if (!newColumn) return;
-    
-    const baseColumns = ['stock_symbol', 'currentPrice', 'regularMarketChangePercent', 'regularMarketVolume', 'market_cap'];
-
-    // check if the column already exists in the columns array
-    // diyelim önceden min haliyle bir column eklenmiş, şimdi max hali eklenmek isteniyor. Bu case de bu true olucak ve eklemeyi önleyecek.
-    const columnExists = columns && columns.some(col => col?.key === newColumn.key);
-
-    // Check if the new column is not null and it does not exist in the columns array and it is not one of the base columns
-    if (newColumn && !columnExists && !baseColumns.includes(newColumn.key)) {
-        const insertIndex = columns.findIndex(col => col.key === '1_week');
-        
-        // Ensure insertIndex is valid
-        const updatedColumns = [...columns];
-        if (insertIndex !== -1) {
-          // insert the new column at the correct index (insert before the 1_week column) 
-            updatedColumns.splice(insertIndex, 0, newColumn);
-            setColumns(updatedColumns);
-        }
-    }
-  };
-
-
-  // Function to remove a dynamic column from the table based on the filter key 
-  // bir filter çıkartılınca onun column u da çıkartmak için kullanılır
-  const removeDynamicColumn = (filterKey) => {
-    // check if the dynamicColumnMapping or filterKey is null
-    if (!dynamicColumnMapping || !filterKey) return;
-
-    // get the column to remove from the dynamicColumnMapping
-    const columnToRemove = dynamicColumnMapping[filterKey];
-    /* one example:
-      columnToRemove = {
-        key: 'trailingPE',
-        label: 'Price to Earnings',
-        numeric: true
-      }
-    */
-    if (!columnToRemove) return;
-
-    // Null checks and safer column existence check
-    const columnExists = columns && columns.some(col => col?.key === columnToRemove.key);
-
-    // check column is not one of the base columns
-    const baseColumns = ['stock_symbol', 'currentPrice', 'regularMarketChangePercent', 'regularMarketVolume', 'market_cap'];
-
-    if(baseColumns.includes(columnToRemove.key)) return; // do not delete that column
-
-    // Check if the column to remove is not null and it exists in the columns array
-    if (columnToRemove && columnExists) {
-        const updatedColumns = columns.filter(col => col.key !== columnToRemove.key);
-        setColumns(updatedColumns);
-    }
-  };
-
   const formatValue = (value, key) => {
       if (value === null || value === undefined) return 'N/A';
     
@@ -329,51 +267,46 @@ const AllStocksPage = () => {
     // Apply the filters to the stocks array and update the columns based on the filters
     const applyFilters = () => {
       const filtered = stocks.filter(stock => {
-          // Some filters might be null, so we need to check if they are null before applying the filter
-          // If the filter is null, we assume that the stock meets the filter criteria
-          // If the filter is not null, we check if the stock meets the filter criteria
-
-          const meetsBasicFilters =   
-              (filters.minPrice === 0 || stock.currentPrice >= filters.minPrice) &&
-              (filters.maxPrice === Infinity || stock.currentPrice <= filters.maxPrice) &&
-              (filters.minMarketCap === 0 || stock.market_cap >= filters.minMarketCap) &&
-              (filters.maxMarketCap === Infinity || stock.market_cap <= filters.maxMarketCap) &&
-              (filters.minVolume === 0 || stock.regularMarketVolume >= filters.minVolume) &&
-              (filters.maxVolume === Infinity || stock.regularMarketVolume <= filters.maxVolume);
-
-          const meetsProfitabilityFilters =
-              (filters.minPriceToEarnings === 0 || stock.trailingPE >= filters.minPriceToEarnings) &&
-              (filters.maxPriceToEarnings === Infinity || stock.trailingPE <= filters.maxPriceToEarnings) &&
-              (filters.minPriceToSales === -Infinity || stock.priceToSalesTrailing12Months >= filters.minPriceToSales) &&
-              (filters.maxPriceToSales === Infinity || stock.priceToSalesTrailing12Months <= filters.maxPriceToSales) &&
-              (filters.minPriceToBook === -Infinity || stock.priceToBook >= filters.minPriceToBook) &&
-              (filters.maxPriceToBook === Infinity || stock.priceToBook <= filters.maxPriceToBook) && 
-              (filters.minPriceToEbitda === -Infinity || stock.enterpriseToEbitda >= filters.minPriceToEbitda) &&
-              (filters.maxPriceToEbitda === Infinity || stock.enterpriseToEbitda <= filters.maxPriceToEbitda);
-
-          const meetsMarginsFilters =
-              (filters.minNetProfitMargin === -Infinity || stock.profitMargins >= filters.minNetProfitMargin) &&
-              (filters.maxNetProfitMargin === Infinity || stock.profitMargins <= filters.maxNetProfitMargin) &&
-              (filters.minOperatingMargin === -Infinity || stock.operatingMargins >= filters.minOperatingMargin) &&
-              (filters.maxOperatingMargin === Infinity || stock.operatingMargins <= filters.maxOperatingMargin) &&
-              (filters.minGrossProfitMargin === -Infinity || stock.grossMargins >= filters.minGrossProfitMargin) &&
-              (filters.maxGrossProfitMargin === Infinity || stock.grossMargins <= filters.maxGrossProfitMargin);
-              
-          const meetsPerformanceFilters =
-              (filters.minReturnOnAssets === -Infinity || stock.returnOnAssets >= filters.minReturnOnAssets) &&
-              (filters.maxReturnOnAssets === Infinity || stock.returnOnAssets <= filters.maxReturnOnAssets) &&
-              (filters.minReturnOnEquity === -Infinity || stock.returnOnEquity >= filters.minReturnOnEquity) &&
-              (filters.maxReturnOnEquity === Infinity || stock.returnOnEquity <= filters.maxReturnOnEquity);
-              
-
-          const meetsBalanceSheetFilters =
-              (filters.minDebtToEquity === -Infinity || stock.debtToEquity >= filters.minDebtToEquity) &&
-              (filters.maxDebtToEquity === Infinity || stock.debtToEquity <= filters.maxDebtToEquity) &&
-              (filters.minCurrentRatio === -Infinity || stock.currentRatio >= filters.minCurrentRatio) &&
-              (filters.maxCurrentRatio === Infinity || stock.currentRatio <= filters.maxCurrentRatio) &&
-              (filters.minQuickRatio === -Infinity || stock.quickRatio >= filters.minQuickRatio) &&
-              (filters.maxQuickRatio === Infinity || stock.quickRatio <= filters.maxQuickRatio);
+        const meetsBasicFilters = 
+          (filters.minPrice === 0 || stock.currentPrice >= filters.minPrice) &&
+          (filters.maxPrice === Infinity || stock.currentPrice <= filters.maxPrice) &&
+          (filters.minMarketCap === 0 || stock.market_cap >= filters.minMarketCap) &&
+          (filters.maxMarketCap === Infinity || stock.market_cap <= filters.maxMarketCap) &&
+          (filters.minVolume === 0 || stock.regularMarketVolume >= filters.minVolume) &&
+          (filters.maxVolume === Infinity || stock.regularMarketVolume <= filters.maxVolume);
     
+        const meetsProfitabilityFilters =
+          (filters.minPriceToEarnings === 0 || stock.trailingPE >= filters.minPriceToEarnings) &&
+          (filters.maxPriceToEarnings === Infinity || stock.trailingPE <= filters.maxPriceToEarnings) &&
+          (filters.minPriceToSales === -Infinity || stock.priceToSalesTrailing12Months >= filters.minPriceToSales) &&
+          (filters.maxPriceToSales === Infinity || stock.priceToSalesTrailing12Months <= filters.maxPriceToSales) &&
+          (filters.minPriceToBook === -Infinity || stock.priceToBook >= filters.minPriceToBook) &&
+          (filters.maxPriceToBook === Infinity || stock.priceToBook <= filters.maxPriceToBook) && 
+          (filters.minPriceToEbitda === -Infinity || stock.enterpriseToEbitda >= filters.minPriceToEbitda) &&
+          (filters.maxPriceToEbitda === Infinity || stock.enterpriseToEbitda <= filters.maxPriceToEbitda);
+    
+        const meetsMarginsFilters =
+          (filters.minNetProfitMargin === -Infinity || stock.profitMargins >= filters.minNetProfitMargin) &&
+          (filters.maxNetProfitMargin === Infinity || stock.profitMargins <= filters.maxNetProfitMargin) &&
+          (filters.minOperatingMargin === -Infinity || stock.operatingMargins >= filters.minOperatingMargin) &&
+          (filters.maxOperatingMargin === Infinity || stock.operatingMargins <= filters.maxOperatingMargin) &&
+          (filters.minGrossProfitMargin === -Infinity || stock.grossMargins >= filters.minGrossProfitMargin) &&
+          (filters.maxGrossProfitMargin === Infinity || stock.grossMargins <= filters.maxGrossProfitMargin);
+              
+        const meetsPerformanceFilters =
+          (filters.minReturnOnAssets === -Infinity || stock.returnOnAssets >= filters.minReturnOnAssets) &&
+          (filters.maxReturnOnAssets === Infinity || stock.returnOnAssets <= filters.maxReturnOnAssets) &&
+          (filters.minReturnOnEquity === -Infinity || stock.returnOnEquity >= filters.minReturnOnEquity) &&
+          (filters.maxReturnOnEquity === Infinity || stock.returnOnEquity <= filters.maxReturnOnEquity);
+    
+        const meetsBalanceSheetFilters =
+          (filters.minDebtToEquity === -Infinity || stock.debtToEquity >= filters.minDebtToEquity) &&
+          (filters.maxDebtToEquity === Infinity || stock.debtToEquity <= filters.maxDebtToEquity) &&
+          (filters.minCurrentRatio === -Infinity || stock.currentRatio >= filters.minCurrentRatio) &&
+          (filters.maxCurrentRatio === Infinity || stock.currentRatio <= filters.maxCurrentRatio) &&
+          (filters.minQuickRatio === -Infinity || stock.quickRatio >= filters.minQuickRatio) &&
+          (filters.maxQuickRatio === Infinity || stock.quickRatio <= filters.maxQuickRatio);
+        
         return (
           meetsBasicFilters &&
           meetsProfitabilityFilters &&
@@ -382,50 +315,71 @@ const AllStocksPage = () => {
           meetsBalanceSheetFilters
         );
       });
-
+    
       setFilteredStocks(filtered);
-      setOpenFiltersDialog(false); // close the filters dialog after applying the filters
-
-      // Add dynamic columns based on the filters
-      // if filter key included min and value is not 0 or -Infinity, add the dynamic column
-      // if filter key included max and value is not Infinity, add the dynamic column
-      // iterate through the filters object and add dynamic columns based on the filter keys
-      // bir dict de değere ulaşma 2 yolu var: dict.key veya dict['key']
-      Object.keys(filters || {}).forEach(filterKey => {
-        const filterValue = filters[filterKey];
+      setOpenFiltersDialog(false);
+    
+      // First, collect all columns that should be displayed no matter what
+      const baseColumns = ['stock_symbol', 'currentPrice', 'regularMarketChangePercent', 'regularMarketVolume', 'market_cap', '1_week', '1_month', '3_months', '1_year', '3_years', '5_years'];
+      // create a variable where we will store the updated columns to be displayed in the table
+      let updatedColumns = [...columns].filter(col => baseColumns.includes(col.key));
+      // create a set to keep track of which metrics we've already processed
+      // min ve max olarka girilen değerleri 2 defa eklememek için
+      const processedMetrics = new Set();
+    
+      // Find the insert index once, we will insert the new columns before the 1_week column
+      const insertIndex = columns.findIndex(col => col.key === '1_week');
+      
+      // for each filterKey (minReturnOnAssets for example) in the filters object
+      Object.keys(filters).forEach(filterKey => {
+        if (!filterKey.includes('min') && !filterKey.includes('max')) return;
+    
+        // Get the base metric name : minReturnOnAssets -> ReturnOnAssets
+        const baseMetric = filterKey.replace(/^(min|max)/, '');
         
-        if ( (filterKey.includes('min') && filterValue !== -Infinity && filterValue !== 0)  ) {
-            addDynamicColumn(filterKey);
-        }
-        
-        if (filterKey.includes('max') && filterValue !== Infinity) {
-            addDynamicColumn(filterKey);
-        }
-        else{ 
-          // if it goes in here, it means that the filter is not applied
+        // Skip if we've already processed this metric
+        if (processedMetrics.has(baseMetric)) return;
+        // if not processed, add the metric (ReturnOnAssets) to the set 
+        processedMetrics.add(baseMetric);
+    
+        // Get both min and max filter values
+        const minKey = `min${baseMetric}`;
+        const maxKey = `max${baseMetric}`;
+        const minValue = filters[minKey]; // minReturnOnAssets filter value değeri
+        const maxValue = filters[maxKey]; // maxReturnOnAssets filter value değeri
+    
+        // Determine if either filter is active
+        const isMinActive = (minValue !== -Infinity && minValue !== 0);
+        const isMaxActive = maxValue !== Infinity;
 
-          // before deleting, we need to check if the other version of the filter is applied
-          // if the other version of the filter is applied, do not delete the column
-          if (filterKey.includes('min')) {
-            const maxFilterKey = filterKey.replace('min', 'max');
-            if (filters[maxFilterKey] !== Infinity) return;
-            else{
-              removeDynamicColumn(filterKey);
+        // if one of the filters is active, add the ReturnOnAssets column to the updatedColumns array to be displayed in the table
+        if (isMinActive || isMaxActive) {
+          // Get the column from mapping based on the filter key
+          const newColumn = dynamicColumnMapping[minKey]; // Use minKey as reference
+
+          // add the column to the columns to be displayed if it doesn't already exist and it's not a base column
+          if (newColumn && !baseColumns.includes(newColumn.key)) {
+            // Check if column already exists
+            const columnExists = updatedColumns.some(col => col?.key === newColumn.key);
+
+            if (!columnExists) {
+              // Insert at the correct position
+              if (insertIndex !== -1) {
+                // insert 'newColumn' before the '1_week' column at the insertIndex
+                updatedColumns.splice(insertIndex, 0, newColumn);
+              } else {
+                updatedColumns.push(newColumn);
+              }
             }
           }
-
-          // if the filter is not applied, remove the dynamic column
-          else if (filterKey.includes('max')) {
-            const minFilterKey = filterKey.replace('max', 'min');
-            if (filters[minFilterKey] !== -Infinity && filters[minFilterKey] !== 0) return;
-            // that means both version of the filter is default value
-            else{
-              removeDynamicColumn(filterKey);
-            }
-          }
-        } 
-    }
-  );
+        }
+      });
+      // eğer bir filter default değerine dönüştürülürse (0, Infinity, -Infinity) bu filter ı columns dan çıkarıyoruz
+      // Bu çıkarma işlemi updated columns array inde bulunmayarak oluyor. Yani aslında çıkarmıyoruz
+      // yeni oluşturduğumuz updatedColumns array e bu column u dahil etmeyerek oluyor her bir applyfilter çağrılmasından sonra.
+    
+      // Update columns state once with all changes
+      setColumns(updatedColumns);
   };
 
   // Function to have a search bar to search for stocks
