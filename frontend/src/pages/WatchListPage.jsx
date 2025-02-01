@@ -26,10 +26,13 @@ import watchListService from '../services/watchListService';
 import stockService from '../services/stockService';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
 
 const WatchlistPage = () => {
   const { watchlistId: watchlistId } = useParams();
   const navigate = useNavigate();
+
+  const theme = useTheme();
   
   // State for watchlist data
   const [watchlist, setWatchlist] = useState(null);
@@ -196,7 +199,7 @@ const WatchlistPage = () => {
         <Typography variant="h3" sx={{
           fontWeight: 700,
           mb: 2,
-          background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+          background: `linear-gradient(45deg, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
           backgroundClip: 'text',
           color: 'transparent'
         }}>
@@ -235,7 +238,7 @@ const WatchlistPage = () => {
                 onClick={handleAddStock}
                 disabled={!selectedStock}
                 sx={{
-                background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
                 py: 2,
                 color: 'white' 
                 }}

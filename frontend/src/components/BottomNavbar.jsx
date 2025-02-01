@@ -41,7 +41,7 @@ const Navbar = () => {
   };
 
   return (
-    <AppBar position="sticky" sx={{ top: 0, background: (theme) => `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.main})` }}>
+    <AppBar position="sticky" sx={{ top: 0, background: (theme) => `linear-gradient(to right, ${theme.palette.primary[700]}, ${theme.palette.primary.main})` }}>
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-around' }}>
         <IconButton onClick={() => handleNavigation(0)} sx={{ color: value === 0 ? 'white' : 'rgba(255, 255, 255, 0.7)' }}>
           <Dashboard />

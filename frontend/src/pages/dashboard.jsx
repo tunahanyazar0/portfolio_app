@@ -13,6 +13,10 @@ import authService from '../services/authService';
 import PortfolioCard from '../components/PortfolioCard';
 import portfolioService from '../services/portfolioService';
 import newsService from '../services/newsService';
+// for theme.palette. .. color:
+import { useTheme } from '@mui/material/styles';
+// user info
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
   const [portfolios, setPortfolios] = useState([]);
@@ -20,6 +24,10 @@ const Dashboard = () => {
   // news
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  // theme
+  const theme = useTheme();
+  // user is the user information
+  const {user} = useAuth();
 
   /*
   user is sth like:
@@ -38,10 +46,7 @@ const Dashboard = () => {
     // fetch data
     const fetchData = async () => {
       try {
-        const username = authService.getUsernameFromToken();
-        const user = await authService.getUserInformationByUsername(username);
-        const userId = user.user_id;
-        const data = await portfolioService.getUserPortfolios(userId);
+        const data = await portfolioService.getUserPortfolios(user.user_id);
         /*
             It returns an array of portfolios like this:
             [
@@ -63,7 +68,7 @@ const Dashboard = () => {
         // Fetch data for portfolios, sectors, and news
         const sectorsData = await stockService.getAllSectors();
         // fetch portfolios of the user by passing the user id 
-        const portfoliosData = await portfolioService.getUserPortfolios(userId);
+        const portfoliosData = await portfolioService.getUserPortfolios(user.user_id);
         console.log(portfoliosData);
 
         // Get top 3 portfolios and sectors
@@ -99,7 +104,7 @@ const Dashboard = () => {
             margin: '2rem 0 1rem',
             fontWeight: 700,
             textAlign: 'center',
-            background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+            background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
             backgroundClip: 'text',
             color: 'transparent'
         }}
@@ -122,7 +127,7 @@ const Dashboard = () => {
             margin: '2rem 0 1rem',
             fontWeight: 700,
             textAlign: 'center',
-            background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+            background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
             backgroundClip: 'text',
             color: 'transparent'
         }}

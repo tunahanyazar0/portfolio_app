@@ -13,12 +13,16 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import stockService from '../services/stockService';
 import SectorCard from '../components/SectorCard';
+// theme
+import { useTheme } from '@mui/material/styles';
 
 const AllSectorsPage = () => {
   const [sectors, setSectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  // theme
+  const theme = useTheme();
 
   useEffect(() => {
     const fetchSectors = async () => {
@@ -119,7 +123,7 @@ const AllSectorsPage = () => {
         sx={{ 
             fontWeight: 700,
             textAlign: 'center',
-            background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+            background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
             backgroundClip: 'text',
             color: 'transparent'
         }}

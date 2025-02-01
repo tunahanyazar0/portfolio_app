@@ -164,7 +164,7 @@ const Navbar = () => {
       position="static" 
       elevation={0}
       sx={{
-        background: (theme) => `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+        background: (theme) => `linear-gradient(to right, ${theme.palette.primary[700]}, ${theme.palette.primary.main})`,
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >

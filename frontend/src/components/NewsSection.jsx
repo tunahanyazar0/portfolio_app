@@ -11,10 +11,15 @@ import {
     Fade
 } from '@mui/material';
 import { OpenInNew } from '@mui/icons-material';
+// for the use of theme
+import { useTheme } from '@mui/material/styles';
+// note that, this is defined in the theme.js file and used appcontent file
 
 const NewsSection = ({ news, loading = false }) => { 
     // state variable to show more news
     const [showMore, setShowMore] = useState(false);
+    // for the use of theme
+    const theme = useTheme();
 
     // if news is null, return a jsx element with a message
     if(!news || news.length === 0) {
@@ -55,7 +60,7 @@ const NewsSection = ({ news, loading = false }) => {
                     mb: 4,
                     fontWeight: 600,
                     textAlign: 'center',
-                    background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                    background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
                     backgroundClip: 'text',
                     color: 'transparent'
                 }}
