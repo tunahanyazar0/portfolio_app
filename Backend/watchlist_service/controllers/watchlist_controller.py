@@ -232,3 +232,32 @@ def remove_alert_price(item_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
+# check alerts
+"""
+example url: /check-alerts
+example response: {"message": "Checked 0 alerts"}
+"""
+# this is needed when we want an admin or user-triggered check in addition to the automatic process.
+# might be deleted later since it is not necessary
+@router.post("/check-alerts")
+async def check_alerts(db: Session = Depends(get_db)):
+    """
+    Manually check price alerts and send WebSocket notifications to users.
+    """
+    service = WatchlistService(db)
+    notifications = service.check_price_alerts()
+
+    for notification in notifications:
+        message = (f"🚨 Stock Alert: {notification['stock_symbol']} is near your target price of "
+                   f"{notification['target_price']}! Current price: {notification['current_price']}")
+        
+        user_id = notification["user_id"]
+
+        await websocket_manager.send_update(
+            user_id, message
+        )
+
+        print("message sent")
+
+    return {"message": f"Checked {len(notifications)} alerts"}
+    

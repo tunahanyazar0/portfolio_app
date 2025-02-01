@@ -26,6 +26,8 @@ import { useNavigate } from 'react-router-dom';
 // for news section
 import NewsSection from '../components/NewsSection';
 import newsService from '../services/newsService';
+// theme
+import { useTheme } from '@mui/material/styles';
 
 const PortfolioPage = ({ match }) => {
     // display portfolio details 
@@ -37,6 +39,9 @@ const PortfolioPage = ({ match }) => {
     const [totalValue, setTotalValue] = useState(0);
     const [totalProfit, setTotalProfit] = useState(0);
     const [loading, setLoading] = useState(true);
+
+    // theme
+    const theme = useTheme();
 
     // New state for holdings management
     const [searchQuery, setSearchQuery] = useState('');
@@ -285,7 +290,7 @@ const PortfolioPage = ({ match }) => {
                 <Typography variant="h3" sx={{ 
                     fontWeight: 700, 
                     mb: 2,
-                    background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                    background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
                     backgroundClip: 'text',
                     color: 'transparent'
                 }}>
@@ -468,7 +473,7 @@ const PortfolioPage = ({ match }) => {
                         mb: 4,
                         fontWeight: 600,
                         textAlign: 'center',
-                        background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                        background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
                         backgroundClip: 'text',
                         color: 'transparent'
                     }}>
@@ -520,9 +525,8 @@ const PortfolioPage = ({ match }) => {
                                 disabled={!selectedStock || !quantity || !averagePrice}
                                 sx={{
                                     color : 'blue',
-                                    background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
-                                    py: 2,
-                                    color: 'white'
+                                    background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
+                                    py: 2
                                 }}
                             >
                                 Add Holding

@@ -16,15 +16,28 @@ import {
   CircularProgress,
   alpha,
   Slide,
+  Popover,
+  Badge
 } from '@mui/material';
 import { AccountCircle, Search as SearchIcon, Close } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import stockService from '../services/stockService';
+// for notification
+import { Notifications as NotificationsIcon } from "@mui/icons-material";
+
+
+// One cons of having a web connection in the navbar is that connection is re-established every time the user navigates to a new page
+// This is not a big deal for small applications, but for larger applications, it can be a performance issue. 
+// For that reason, it is better to have a WebSocket connection in a separate component that is always rendered, such as the App component.
+// We can do it later. We might pull the notifications in the app content and then pass it to here, navbar.
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  // anchorEl is used to position the user dropdown menu
+  // if anchorEl is null, the menu is closed
+  // if anchorEl is set to the button element, the menu is opened
   const [anchorEl, setAnchorEl] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -32,13 +45,73 @@ const Navbar = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchInputRef = useRef(null);
 
+  // for notifications
+  // to keep the notifications and unread count
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0); // Count of unread notifications
+  const socketRef = useRef(null); // Store the WebSocket connection
+  // this anchorEl is used to position the notifications popover
+  // if anchorEl is null, the popover is closed; if it is set to the button element, the popover is opened
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState(null); // For notifications
+
+
+  useEffect(() => {
+    if (!user) return;
+
+    const connectWebSocket = () => {
+      socketRef.current = new WebSocket("ws://localhost:8002/ws/" + user.user_id);
+      console.log("Connecting WebSocket...");
+
+      socketRef.current.onmessage = (event) => {
+        console.log("New message:", event.data);
+        setNotifications((prev) => {
+          const newNotifications = [event.data, ...prev].slice(0, 10);
+          return newNotifications;
+        });
+        
+        // increment the unread count
+        setUnreadCount((prev) => prev + 1);
+      };
+
+      console.log("nofications", notifications);
+
+      socketRef.current.onclose = () => {
+        console.log("WebSocket disconnected ❌ Reconnecting...");
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      socketRef.current.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        socketRef.current.close();
+      };
+    };
+
+    connectWebSocket();
+    return () => socketRef.current?.close();
+  }, [user]);
+
+  const handleOpen = (event) => {
+    setNotificationAnchorEl(event.currentTarget);
+    setAnchorEl(null); // Close user menu when opening notifications
+    setUnreadCount(0); // Mark as read when opened
+  };
+
+  const handleClose = () => setNotificationAnchorEl(null);
+  // end of the notification part
+
+
+  
   const handleMenuOpen = (event) => {
+    // open the user menu
     setAnchorEl(event.currentTarget);
+    // Close notifications when menu opens 
+    setNotificationAnchorEl(null);
     // Close search when menu opens
     setIsSearchOpen(false);
     setSearchQuery('');
   };
 
+  // close the user menu by setting anchorEl to null
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleSearchChange = (event) => {
@@ -82,12 +155,16 @@ const Navbar = () => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
+
+  // notifications part
+
+
   return (
     <AppBar 
       position="static" 
       elevation={0}
       sx={{
-        background: (theme) => `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
+        background: (theme) => `linear-gradient(to right, ${theme.palette.primary[700]}, ${theme.palette.primary.main})`,
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
       }}
     >
@@ -252,6 +329,56 @@ const Navbar = () => {
             )}
           </Box>
         )}
+
+        {/* Notifications */}
+        {user && (
+          <IconButton color="inherit" onClick={handleOpen}>
+            <Badge badgeContent={unreadCount} color="error">
+              <NotificationsIcon />
+            </Badge>
+          </IconButton>
+        )}
+
+        {/* Notifications Popover */}
+        {/* anchor el allows us to open and close the drop down menu: if null it means closed, if not, it opens the event.target */}
+        <Popover
+          open={Boolean(notificationAnchorEl)}
+          anchorEl={notificationAnchorEl}
+          onClose={handleClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <Paper sx={{ width: 300, maxHeight: 600, overflowY: "auto" }}>
+            <List>
+              {notifications.length > 0 ? (
+                notifications.map((notif, index) => (
+                  <ListItem key={index}>
+                    <ListItemText primary={notif} />
+                  </ListItem>
+                ))
+              ) : (
+                <ListItem>
+                  <ListItemText primary="No new notifications" />
+                </ListItem>
+              )}
+            </List>
+            {/* Text if this is clicked, notifications are cleared */}
+            <Button
+              onClick={() => {
+                setNotifications([]);
+                setUnreadCount(0);
+              }}
+              sx={{ width: "100%" }}
+            >
+              <Typography variant="body2" sx={{ color: "error.main" }}>
+                Clear Notifications
+              </Typography>
+            </Button>
+          {/* End of the notifications popover - Paper çevresinde belirli bir border var! */}
+            
+          </Paper>
+        </Popover>
+
 
         {/* User Menu */}
         {user && (

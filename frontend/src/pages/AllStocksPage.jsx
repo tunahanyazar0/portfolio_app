@@ -44,6 +44,7 @@ const AllStocksPage = () => {
     // Add a new state to track the original filtered stocks before search
     const [preSearchFilteredStocks, setPreSearchFilteredStocks] = useState([]);
 
+
     // openFiltersDialog state is used to control the visibility of the filters dialog
     const [openFiltersDialog, setOpenFiltersDialog] = useState(false);
     const [sortColumn, setSortColumn] = useState('currentPrice');
@@ -416,7 +417,7 @@ const AllStocksPage = () => {
       fullWidth
       PaperProps={{
         style: {
-            background: 'linear-gradient(135deg, #1e40af, #7c3aed)',
+            background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
             borderRadius: '16px',
             boxShadow: '0 12px 24px rgba(0,0,0,0.2)'
           }
@@ -1153,9 +1154,9 @@ const AllStocksPage = () => {
         onClick={applyFilters} 
         style={{ 
             color: 'white', 
-            backgroundColor: '#7c3aed',
+            backgroundColor: theme.palette.primary.dark,
             '&:hover': { 
-              backgroundColor: '#6d28d9' 
+              backgroundColor: theme.palette.primary.light
             }
           }}
           >Apply Filters</Button>
@@ -1219,7 +1220,7 @@ const AllStocksPage = () => {
                     p: 3, 
                     pb: 0, 
                     fontWeight: 'bold',
-                    background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                    background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
                     backgroundClip: 'text',
                     color: 'transparent',
                     marginBottom: '3px'
@@ -1266,9 +1267,9 @@ const AllStocksPage = () => {
                     variant="contained" 
                     onClick={() => setOpenFiltersDialog(true)}
                     sx={{ 
-                        background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                      background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
                         '&:hover': {
-                            background: 'linear-gradient(45deg, #1e40af, #6d28d9)'
+                            background: theme.palette.primary.light 
                         }
                     }}
                 >

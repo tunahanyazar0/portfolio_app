@@ -38,7 +38,7 @@ function AppContent() {
         <Navbar />
         <BottomNavbar />
 
-        {<WebSocketComponent/>} {/* Run WebSocket only for authenticated users */}
+        {/* {<WebSocketComponent/>} {/* Run WebSocket only for authenticated users */} 
 
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <Routes>

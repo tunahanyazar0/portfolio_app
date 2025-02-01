@@ -4,6 +4,8 @@ from datetime import datetime, date
 from models.models import Watchlist, WatchlistItem, Stock, User
 from sqlalchemy.exc import SQLAlchemyError
 from decimal import Decimal
+import yfinance as yf
+from utils.websocket_manager import websocket_manager
 
 
 # in the watchlist service we do not return detailed info of the stocks in the watchlist
@@ -164,3 +166,59 @@ class WatchlistService:
         self.db.refresh(item)
         return item
     
+    # to learn the price of the stock in the watchlist
+    def get_current_stock_price(self, stock_symbol: str) -> Decimal:
+        """
+            Using the yahoo finance api, get the current stock price for the given stock symbol
+        """
+        try:
+            stock_symbol = stock_symbol.upper()
+            # add .IS to the end of the stock symbol since yahoo finance excepts that
+            stock_symbol += ".IS"
+            stock = yf.Ticker(stock_symbol)
+            info = stock.info
+            current_price = info.get("currentPrice", None)
+            print(f"Current price of {stock_symbol}: {current_price}")
+            # we need to return the price as decimal.Decimal
+            return Decimal(current_price) if current_price is not None else None
+        except Exception as e:
+            print(f"An error occurred while fetching stock price: {e}")
+    
+    """
+        - background task that periodically checks stock prices and notifies the user when the price is within 1% of their target alert price
+        - Use WebSockets to notify the user.
+    """
+
+    def check_price_alerts(self) -> list[dict]:
+        """
+        Checks if any watchlist stocks are within 1% of their target price.
+        Returns a list of notifications.
+        """
+        watchlist_items = self.db.query(WatchlistItem).filter(WatchlistItem.alert_price.isnot(None)).all()
+        notifications = []
+
+        for item in watchlist_items:
+            current_price = self.get_current_stock_price(item.stock_symbol)
+            # take the 2 decimal 
+            current_price = "{:.2f}".format(current_price) if current_price is not None else None
+            current_price = Decimal(current_price)
+            
+            if current_price is None:
+                continue  # Skip if price is not available
+
+            print(f"Checking price alert for {item.stock_symbol}. Current price: {current_price}, Target price: {item.alert_price}")
+            
+            target_price = item.alert_price
+            if abs(current_price - target_price) / target_price <= 0.01:
+                watchlist = self.db.query(Watchlist).filter(Watchlist.watchlist_id == item.watchlist_id).first()
+                user_id = watchlist.user_id if watchlist else None
+                
+                if user_id:
+                    notifications.append({
+                        "user_id": user_id,
+                        "stock_symbol": item.stock_symbol,
+                        "target_price": target_price,
+                        "current_price": current_price
+                    })
+        
+        return notifications

@@ -35,10 +35,14 @@ import watchListService from '../services/watchListService';
 import stockService from '../services/stockService';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+// theme
+import { useTheme } from '@mui/material/styles';
 
 const WatchListsPage = () => {
     const navigate = useNavigate();
     const { userId } = useAuth();
+    // theme
+    const theme = useTheme();
   
     // State
     const [watchlists, setWatchlists] = useState([]);
@@ -157,7 +161,7 @@ const WatchListsPage = () => {
         <Typography variant="h3" sx={{
           fontWeight: 700,
           mb: 2,
-          background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+          background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
           backgroundClip: 'text',
           color: 'transparent'
         }}>
@@ -195,7 +199,7 @@ const WatchListsPage = () => {
               startIcon={<Plus size={20} />}
               onClick={() => setCreateDialogOpen(true)}
               sx={{
-                background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                background: '(${theme.palette.primary.dark})',
                 py: 2
               }}
             >
@@ -332,7 +336,7 @@ const WatchListsPage = () => {
                     endIcon={<ArrowUpRight size={18} />}
                     onClick={() => navigate(`/watchlist/${watchlist.watchlist_id}`)}
                     sx={{
-                      background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+                      background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
                     }}
                   >
                     View Details

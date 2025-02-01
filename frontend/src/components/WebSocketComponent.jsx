@@ -8,6 +8,7 @@ const WebSocketComponent = () => {
     const {userId} = useAuth(); // Get the user ID from context
 
   useEffect(() => {
+    
     // our socket
     let socket;
 

@@ -31,6 +31,8 @@ import AddIcon from '@mui/icons-material/Add';
 import PortfolioCard from '../components/PortfolioCard';
 import portfolioService from '../services/portfolioService';
 import authService from '../services/authService';
+// for theme
+import { useTheme } from '@mui/material/styles';
 
 const CreatePortfolioDialog = ({ 
   open, 
@@ -87,6 +89,7 @@ const PortfoliosPage = () => {
     message: '',
     severity: 'success'
   });
+  const theme = useTheme();
 
   // Fetch user portfolios whenever the page loads
   useEffect(() => {
@@ -193,7 +196,7 @@ const PortfoliosPage = () => {
           variant="h4" 
           sx={{ 
               fontWeight: 600,
-              background: 'linear-gradient(45deg, #2563eb, #7c3aed)',
+              background: `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.light})`,
               backgroundClip: 'text',
               color: 'transparent'
           }}

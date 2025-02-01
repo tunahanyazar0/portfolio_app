@@ -641,4 +641,6 @@ class StockService:
         result = self.db.query(Sector).all()
         print(result)
         return result
+        
+    
     

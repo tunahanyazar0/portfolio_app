@@ -19,6 +19,8 @@ import { useParams } from 'react-router-dom';
 // for news about the sector
 import newsService from '../services/newsService';
 import NewsSection from '../components/NewsSection';
+// theme
+import { useTheme } from '@mui/material/styles';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#FF0000'];
 
@@ -28,6 +30,8 @@ const SectorPage = () => {
   const [loading, setLoading] = useState(true);
   // for news about the sector
   const [news, setNews] = useState([]);
+  // theme
+  const theme = useTheme();
 
   useEffect(() => {
     console.log("here -1");

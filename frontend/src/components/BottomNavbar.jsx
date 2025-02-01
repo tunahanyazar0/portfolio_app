@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { BottomNavigation, BottomNavigationAction, Box } from '@mui/material';
-// for watchlists page icon: WatchLater
-import { Home, Business, BarChart, PieChart, AccountBox,WatchLater, Dashboard, ShowChart} from '@mui/icons-material';
+import { AppBar, Toolbar, IconButton, Box, Typography } from '@mui/material';
+import { Home, Business, BarChart, PieChart, AccountBox, WatchLater, Dashboard, ShowChart } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const BottomNavbar = () => {
+const Navbar = () => {
   const [value, setValue] = useState(0);
   const navigate = useNavigate();
   const { user } = useAuth(); // Get the user from AuthContext
@@ -42,41 +41,52 @@ const BottomNavbar = () => {
   };
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        height: 53,
-        background: (theme) =>
-          `linear-gradient(to right, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      }}
-    >
-      <BottomNavigation
-        value={value}
-        onChange={(event, newValue) => handleNavigation(newValue)}
-        showLabels
-        sx={{
-          '& .MuiBottomNavigationAction-root': {
-            color: 'rgba(255, 255, 255, 0.7)',
-            '&.Mui-selected': {
-              color: 'white',
-            },
-            '&:hover': {
-              color: 'white',
-            },
-          },
-          background: 'transparent',
-        }}
-      >
-        <BottomNavigationAction label="Dashboard" icon={<Dashboard />} />
-        <BottomNavigationAction label="Sectors" icon={<Business />} />
-        <BottomNavigationAction label="Stocks" icon={<ShowChart />} />
-        <BottomNavigationAction label="WatchLists" icon={<WatchLater />} />
-        <BottomNavigationAction label="Portfolio" icon={<PieChart />} />
-        <BottomNavigationAction label="Profile" icon={<AccountBox />} />
-      </BottomNavigation>
-    </Box>
+    <AppBar position="sticky" sx={{ top: 0, background: (theme) => `linear-gradient(to right, ${theme.palette.primary[700]}, ${theme.palette.primary.main})` }}>
+      <Toolbar sx={{ display: 'flex', justifyContent: 'space-around' }}>
+        <IconButton onClick={() => handleNavigation(0)} sx={{ color: value === 0 ? 'white' : 'rgba(255, 255, 255, 0.7)' }}>
+          <Dashboard />
+          <Typography variant="body2" sx={{ color: value === 0 ? 'white' : 'rgba(255, 255, 255, 0.7)', marginLeft: '2px' }}>
+            Dashboard
+          </Typography>
+        </IconButton>
+        
+        <IconButton onClick={() => handleNavigation(1)} sx={{ color: value === 1 ? 'white' : 'rgba(255, 255, 255, 0.7)' }}>
+          <Business />
+          <Typography variant="body2" sx={{ color: value === 1 ? 'white' : 'rgba(255, 255, 255, 0.7)' , marginLeft: '2px'}}>
+            Sectors
+          </Typography>
+        </IconButton>
+        
+        <IconButton onClick={() => handleNavigation(2)} sx={{ color: value === 2 ? 'white' : 'rgba(255, 255, 255, 0.7)' }}>
+          <ShowChart />
+          <Typography variant="body2" sx={{ color: value === 2 ? 'white' : 'rgba(255, 255, 255, 0.7)', marginLeft: '2px' }}>
+            Stocks
+          </Typography>
+        </IconButton>
+        
+        <IconButton onClick={() => handleNavigation(3)} sx={{ color: value === 3 ? 'white' : 'rgba(255, 255, 255, 0.7)' }}>
+          <WatchLater />
+          <Typography variant="body2" sx={{ color: value === 3 ? 'white' : 'rgba(255, 255, 255, 0.7)', marginLeft: '2px' }}>
+            Watchlists
+          </Typography>
+        </IconButton>
+        
+        <IconButton onClick={() => handleNavigation(4)} sx={{ color: value === 4 ? 'white' : 'rgba(255, 255, 255, 0.7)' }}>
+          <PieChart />
+          <Typography variant="body2" sx={{ color: value === 4 ? 'white' : 'rgba(255, 255, 255, 0.7)', marginLeft: '2px' }}>
+            Portfolio
+          </Typography>
+        </IconButton>
+        
+        <IconButton onClick={() => handleNavigation(5)} sx={{ color: value === 5 ? 'white' : 'rgba(255, 255, 255, 0.7)' }}>
+          <AccountBox />
+          <Typography variant="body2" sx={{ color: value === 5 ? 'white' : 'rgba(255, 255, 255, 0.7)', marginLeft: '2px' }}>
+            Profile
+          </Typography>
+        </IconButton>
+      </Toolbar>
+    </AppBar>
   );
 };
 
-export default BottomNavbar;
+export default Navbar;
