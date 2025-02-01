@@ -10,6 +10,10 @@ from controllers.watchlist_controller import router as stock_router
 from models.models import Base
 from utils.db_context import engine
 from utils.websocket_manager import websocket_manager
+# for checking the price of the stock every minute and inform the user
+import asyncio
+from utils.db_context import get_db
+from services.watchlist_service import WatchlistService
 
 # Single dot (.) means current directory, double dot (..) means parent directory
 
@@ -43,6 +47,24 @@ async def root():
         "docs_url": "/docs",
         "redoc_url": "/redoc"
     }
+
+async def background_task():
+    db = next(get_db())  # Get database session
+    service = WatchlistService(db)
+    
+    while True:
+        notifications = service.check_price_alerts()
+
+        for notification in notifications:
+            message = (f"🚨 Stock Alert: {notification['stock_symbol']} is near your target price of "
+                       f"{notification['target_price']}! Current price: {notification['current_price']}")
+            await websocket_manager.send_update(notification["user_id"], message)
+        
+        await asyncio.sleep(60)  # Run every 60 seconds
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(background_task())  # Start background task
 
 
 # http request i : http://localhost:8002/api/watchlists/1/items : http route 
