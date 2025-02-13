@@ -174,36 +174,6 @@ const StockPage = () => {
     }
   };
 
-  /*
-  // Calculate the stock price changes 
-  // getStockPriceInPredefinedDateRange returns the stock price object in specific dates: today, 1 week, 1 month, 3 months, 6 month, 1 year, 5 years
-  function calculateStockPriceChanges() {
-      const stockPricesInPredefinedDates = stockService.getStockPriceInPredefinedDateRange(symbol);
-      const stockInfo = {
-          ...stock,
-          price_changes: {
-              "1_week": 0,
-              "1_month": 0,
-              "3_month": 0,
-              "ytd": 0,
-              "1_year": 0,
-              "5_year": 0,
-            },
-          };
-          setStockInfo(stockInfo);
-
-          // Calculate the price changes
-          const lastPrice = stockPricesInPredefinedDates[0].close_price;
-          stockInfo.price_changes['1_week'] = ((lastPrice - stockPricesInPredefinedDates[1].close_price) / stockPricesInPredefinedDates[1].close_price) * 100;
-          stockInfo.price_changes['1_month'] = ((lastPrice - stockPricesInPredefinedDates[2].close_price) / stockPricesInPredefinedDates[2].close_price) * 100;
-          stockInfo.price_changes['3_month'] = ((lastPrice - stockPricesInPredefinedDates[3].close_price) / stockPricesInPredefinedDates[3].close_price) * 100;
-          stockInfo.price_changes['ytd'] = ((lastPrice - stockPricesInPredefinedDates[3].close_price) / stockPricesInPredefinedDates[3].close_price) * 100;
-          stockInfo.price_changes['1_year'] = ((lastPrice - stockPricesInPredefinedDates[4].close_price) / stockPricesInPredefinedDates[4].close_price) * 100;
-  
-          setStockInfo(stockInfo);  
-        
-  };*/
-
   // MAIN USE EFFECT TO FETCH STOCK DATA
   useEffect(() => {
     const fetchStockData = async () => {
