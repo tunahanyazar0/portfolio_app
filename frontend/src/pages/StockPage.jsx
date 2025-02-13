@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Box, CircularProgress, Grid, Paper, ListItemText, ListItem, Chip, List, IconButton, Drawer, Button, ButtonGroup } from '@mui/material';
-import { Line } from 'react-chartjs-2';
+
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { useParams } from 'react-router-dom';
 import stockService from '../services/stockService';
-import BarChart from '../components/BarChart';
-import Sidebar from '../components/Sidebar';
 import { useRef } from 'react';
 import newsService from '../services/newsService';
 
@@ -15,6 +13,9 @@ import StockOverviewCard from '../components/StockOverviewCard';
 import FinancialRatiosCard from '../components/FinancialRatiosCard';
 import StockPriceDetailsCard from '../components/StockPriceDetailsCard';
 import FinancialChartsSection from '../components/FinancialChartsSection';
+// stock price chart
+import StockPriceSection from '../components/StockPriceSection';
+import { Padding } from '@mui/icons-material';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -25,6 +26,8 @@ const StockPage = () => {
   const [price, setPrice] = useState(null); // to store the most recent stock price 
   const [chartData, setChartData] = useState(null); // to store the stock price data for the chart
   const [loading, setLoading] = useState(true);
+
+  const [priceData, setPriceData] = useState([]);
 
   // hisse fiyat tablosundaki zaman aralığı seçimi
   const [dateRange, setDateRange] = useState('1M'); // Default date range is 1 month
@@ -73,15 +76,11 @@ const StockPage = () => {
   // cash flow statement related
   const [freeCashFlowChartData, setFreeCashFlowChartData] = useState(null);
 
-  // Sidebar related
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
-
   // news related 
   const [news, setNews] = useState(null);
 
 
-  // Fields for navigation
+  // Fields for navigation - not used anymore can be deleted ama jsx deki ref leride silmemiz gerekir.
   const fields = [
     { id: 'price-info', label: 'Price Info' },
     { id: 'general-info', label: 'General Info' },
@@ -121,7 +120,91 @@ const StockPage = () => {
     }
   };
 
+  // Function to fetch price data based on time range
+  const handleTimeRangeChange = async (range) => {
+    try {
+      setLoading(true);
+      let startDate, endDate = new Date().toISOString().split('T')[0];
+      
+      // Calculate start date based on selected range
+      switch(range) {
+        case '1D':
+          startDate = new Date(new Date().setDate(new Date().getDate() - 1))
+            .toISOString().split('T')[0];
+          break;
+        case '1W':
+          startDate = new Date(new Date().setDate(new Date().getDate() - 7))
+            .toISOString().split('T')[0];
+          break;
+        case '1M':
+          startDate = new Date(new Date().setMonth(new Date().getMonth() - 1))
+            .toISOString().split('T')[0];
+          break;
+        case '3M':
+          startDate = new Date(new Date().setMonth(new Date().getMonth() - 3))
+            .toISOString().split('T')[0];
+          break;
+        case '6M':
+          startDate = new Date(new Date().setMonth(new Date().getMonth() - 6))
+            .toISOString().split('T')[0];
+          break;
+        case '1Y':
+          startDate = new Date(new Date().setFullYear(new Date().getFullYear() - 1))
+            .toISOString().split('T')[0];
+          break;
+        case 'ALL':
+          startDate = '2020-01-01'; // Or whatever date you want to start from
+          break;
+        default:
+          startDate = new Date(new Date().setMonth(new Date().getMonth() - 1))
+            .toISOString().split('T')[0];
+      }
 
+      const priceResponse = await stockService.getStockPriceInDateRange({
+        stock_symbol: symbol,
+        start_date: startDate,
+        end_date: endDate,
+      });
+
+      setPriceData(priceResponse);
+    } catch (error) {
+      console.error('Error fetching price data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /*
+  // Calculate the stock price changes 
+  // getStockPriceInPredefinedDateRange returns the stock price object in specific dates: today, 1 week, 1 month, 3 months, 6 month, 1 year, 5 years
+  function calculateStockPriceChanges() {
+      const stockPricesInPredefinedDates = stockService.getStockPriceInPredefinedDateRange(symbol);
+      const stockInfo = {
+          ...stock,
+          price_changes: {
+              "1_week": 0,
+              "1_month": 0,
+              "3_month": 0,
+              "ytd": 0,
+              "1_year": 0,
+              "5_year": 0,
+            },
+          };
+          setStockInfo(stockInfo);
+
+          // Calculate the price changes
+          const lastPrice = stockPricesInPredefinedDates[0].close_price;
+          stockInfo.price_changes['1_week'] = ((lastPrice - stockPricesInPredefinedDates[1].close_price) / stockPricesInPredefinedDates[1].close_price) * 100;
+          stockInfo.price_changes['1_month'] = ((lastPrice - stockPricesInPredefinedDates[2].close_price) / stockPricesInPredefinedDates[2].close_price) * 100;
+          stockInfo.price_changes['3_month'] = ((lastPrice - stockPricesInPredefinedDates[3].close_price) / stockPricesInPredefinedDates[3].close_price) * 100;
+          stockInfo.price_changes['ytd'] = ((lastPrice - stockPricesInPredefinedDates[3].close_price) / stockPricesInPredefinedDates[3].close_price) * 100;
+          stockInfo.price_changes['1_year'] = ((lastPrice - stockPricesInPredefinedDates[4].close_price) / stockPricesInPredefinedDates[4].close_price) * 100;
+  
+          setStockInfo(stockInfo);  
+        
+  };*/
+
+  // MAIN USE EFFECT TO FETCH STOCK DATA
   useEffect(() => {
     const fetchStockData = async () => {
       try {
@@ -150,6 +233,7 @@ const StockPage = () => {
         }
         setStockInfo(stockInfo);
 
+  
         // fetch the news for the stock
         const company_name = stockInfo.shortName;
         // we make the query the name of the company not the symbol
@@ -159,6 +243,9 @@ const StockPage = () => {
         // Fetch the most recent stock price
         const priceData = await stockService.getStockPrice(symbol);
         setPrice(priceData.close_price);
+
+        // Fetch initial price data with default range (1M)
+        await handleTimeRangeChange('1M');
 
         /*
         // Fetch price data for the chart
@@ -434,92 +521,6 @@ const StockPage = () => {
     fetchStockData();
   }, [symbol, dateRange]);
 
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-        padding: {
-            top: 10,
-            bottom: 10,
-            left: 10,
-            right: 10
-        }
-    },
-    plugins: {
-        legend: {
-            display: true,
-            position: 'top',
-            labels: {
-                boxWidth: 20,
-                font: {
-                    weight: 'bold'
-                }
-            }
-        },
-        title: {
-            display: true,
-            text: `Stock Performance (${stock?.stock_symbol})`,
-            font: {
-                size: 18,
-                weight: 'bold',
-                family: 'Arial, sans-serif'
-            },
-            color: '#333',
-            padding: {
-                bottom: 15
-            }
-        },
-        tooltip: {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
-            titleColor: 'white',
-            bodyColor: 'lightgray',
-            borderColor: 'gray',
-            borderWidth: 1,
-            callbacks: {
-                label: context => {
-                    const value = context.raw;
-                    return typeof value === 'number' 
-                        ? `Price: ${value.toFixed(2)} TL` 
-                        : value;
-                },
-            },
-        },
-    },
-    scales: {
-        x: {
-            title: {
-                display: true,
-                text: 'Date',
-                color: '#666',
-                font: {
-                    weight: 'bold'
-                }
-            },
-            grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-            }
-        },
-        y: {
-            title: {
-                display: true,
-                text: 'Price (TL)',
-                color: '#666',
-                font: {
-                    weight: 'bold'
-                }
-            },
-            grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-            },
-            ticks: {
-                callback: value => `${value} TL`,
-                color: '#333'
-            }
-        },
-    },
-  };
-
   // the case where the stock is being fetched
   if (loading) {
     return (
@@ -549,102 +550,20 @@ const StockPage = () => {
   return (
     <Container>
 
-      {/* Sidebar Component 
-
-      - navbar gelince görüntüyü bozdu
-
-      <Sidebar
-        isOpen={isSidebarOpen}
-        toggleSidebar={toggleSidebar}
-        fields={fields}
-        onNavigate={handleNavigate}
-      />
-      
-      */}
-
-
-      {/* Stock Price Section */}
-<Box ref={priceInfoRef} sx={{ my: 4 }}>
-  <Paper 
-    elevation={4} 
-    sx={{ 
-      padding: 3, 
-      marginBottom: 4, 
-      background: 'linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%)',
-      position: 'relative',
-      overflow: 'hidden'
-    }}
-  >
-    {/* Stock Header with Price */}
-    <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        mb: 3 
-      }}>
-        <Box>
-          <Typography 
-            variant="h4" 
-            component="h1" 
-            sx={{ 
-              fontWeight: 'bold', 
-              color: 'primary.main' 
-            }}
-          >
-            {stock.name} ({stock.stock_symbol})
-          </Typography>
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              color: 'text.secondary', 
-              fontWeight: 'medium' 
-            }}
-          >
-            Current Price: {price} TL
-          </Typography>
+        {/* Stock Price Section */} 
+        <Box ref={priceInfoRef} sx = {
+          {
+            my: 4
+          }
+        }>
+          <StockPriceSection
+            symbol={symbol}
+            stockInfo={stockInfo}
+            stock={stock}
+            price={price}
+            loading={loading}
+          />
         </Box>
-        <Chip 
-          label={`Last Updated: ${new Date().toLocaleDateString()}`} 
-          color="primary" 
-          variant="outlined" 
-        />
-      </Box>
-
-      {/* Date Range Buttons */}
-      <ButtonGroup
-        variant="contained"
-        fullWidth
-        sx={{ mb: 3 }}
-        aria-label="Date range selection"
-      >
-        {dateRanges.map((range) => (
-          <Button
-            key={range.value}
-            onClick={() => setDateRange(range.value)}
-            color={dateRange === range.value ? 'primary' : 'linear-gradient(135deg, #f6f8f9 0%, #e5ebee 100%)'}
-            sx={{ 
-              flex: 1,
-              '&:hover': {
-                transform: 'scale(1.05)',
-                zIndex: 1
-              }
-            }}
-          >
-            {range.label}
-          </Button>
-        ))}
-      </ButtonGroup>
-
-      {/* Chart */}
-      <Box sx={{ height: 400, borderRadius: 2, overflow: 'hidden' }}>
-        {chartData ? (
-          <Line data={chartData} options={chartOptions} />
-        ) : (
-          <Typography>No data available for the selected range</Typography>
-        )}
-      </Box>
-    </Paper>
-  </Box>
 
         {/* General Info Section */}
         <Box ref={generalInfoRef} sx={{ my: 4 }}>
